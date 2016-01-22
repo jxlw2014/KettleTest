@@ -316,7 +316,7 @@ public class OracleDatabase extends AbstractDatabase
         {
             result = statement.executeQuery(sql);
             while (result.next())
-                ans.add(result.getString(1));
+                ans.add(result.getString(1).toUpperCase());
             
         } catch (Exception e)
         {

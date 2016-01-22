@@ -312,7 +312,7 @@ public class MysqlDatabase extends AbstractDatabase
         {
             result = statement.executeQuery(sql);
             while (result.next())
-                ans.add(result.getString(1));
+                ans.add(result.getString(1).toUpperCase());
             
         } catch (Exception e)
         {
@@ -369,7 +369,7 @@ public class MysqlDatabase extends AbstractDatabase
             return false;
         }
         
-        System.out.println("creat table " + table.getTableName() + " success...");
+        System.out.println("create table " + table.getTableName() + " success...");
         
         return true;
     }

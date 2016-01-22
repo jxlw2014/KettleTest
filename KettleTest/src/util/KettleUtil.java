@@ -143,7 +143,7 @@ public class KettleUtil
         inputMeta.setDatabaseMeta(sourceDatabase.databaseMeta());
         inputMeta.setSQL(String.format("select * from %s" , sourceTable.getTableName()));
         
-        StepMeta inputStepMeta = new StepMeta(String.format("input%d" , index) , inputMeta);
+        StepMeta inputStepMeta = new StepMeta(String.format("input_%s" , sourceTable.getTableName()) , inputMeta);
         transMeta.addStep(inputStepMeta);
         
         // output table
@@ -154,7 +154,7 @@ public class KettleUtil
         outputMeta.setUseBatchUpdate(setting.inBatch);
         outputMeta.setCommitSize(setting.commitSize);
         
-        StepMeta outputStepMeta = new StepMeta(String.format("output%d" , index) , outputMeta);
+        StepMeta outputStepMeta = new StepMeta(String.format("output_%s" , destTable.getTableName()) , outputMeta);
         transMeta.addStep(outputStepMeta);
         
         // the hop between them
@@ -225,14 +225,14 @@ public class KettleUtil
         inputMeta1.setDatabaseMeta(source.databaseMeta());
         inputMeta1.setSQL(String.format("select * from %s" , sourceTable.getTableName()));
         
-        StepMeta inputStepMeta1 = new StepMeta(String.format("input1_%d" , index) , inputMeta1);
+        StepMeta inputStepMeta1 = new StepMeta(String.format("input1_%s" , sourceTable.getTableName()) , inputMeta1);
         transMeta.addStep(inputStepMeta1);
         
         TableInputMeta inputMeta2 = new TableInputMeta();
         inputMeta2.setDatabaseMeta(dest.databaseMeta());
         inputMeta2.setSQL(String.format("select * from %s" , destTable.getTableName()));
         
-        StepMeta inputStepMeta2 = new StepMeta(String.format("input2_%d" , index) , inputMeta2);
+        StepMeta inputStepMeta2 = new StepMeta(String.format("input2_%s" , destTable.getTableName()) , inputMeta2);
         transMeta.addStep(inputStepMeta2);
         
         // merge
@@ -244,7 +244,7 @@ public class KettleUtil
         // 设置旧的和新的
         rowsMeta.getStepIOMeta().setInfoSteps(new StepMeta[] {inputStepMeta2 , inputStepMeta1});
         
-        StepMeta merge = new StepMeta(String.format("merge_%d" ,index) , rowsMeta);
+        StepMeta merge = new StepMeta(String.format("merge_%s" , sourceTable.getTableName()) , rowsMeta);
         transMeta.addStep(merge);
         
         transMeta.addTransHop(new TransHopMeta(inputStepMeta1 , merge));
@@ -272,7 +272,7 @@ public class KettleUtil
         synMeta.setOrderInsert("new");
         synMeta.setOrderUpdate("changed");
         
-        StepMeta syn = new StepMeta(String.format("syn_%d" , index) , synMeta);
+        StepMeta syn = new StepMeta(String.format("syn_%s" , sourceTable.getTableName()) , synMeta);
         transMeta.addStep(syn);
         
         transMeta.addTransHop(new TransHopMeta(merge , syn));
