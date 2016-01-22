@@ -96,28 +96,12 @@ public final class DatabaseUtil
     }
     
     /**
-     * 获得给定一列对应的sql字符串，实现方式很简陋，只适用于这里
+     * 获得给定一列对应的sql字符串，具体是否可行还需要测试
      * @param 一列的信息
      */
     public static String getSql(TableColumn column)
     {
-        // 一些不需要size
-        if (column.columnType.contains("DATE"))
-            return String.format("`%s` %s" , column.columnName , "CHAR(20)");
-        else if (column.columnType.equals("TIMESTAMP"))
-            return String.format("`%s` %s" , column.columnName , column.columnType);
-        // 如果是varchar相关的
-        else if (column.columnType.contains("VARCHAR"))
-        {
-            // 太长了就用text
-            if (column.columnSize >= 255)
-                return String.format("`%s` %s" , column.columnName , "TEXT");
-            else
-                return String.format("`%s` %s(%d)" , column.columnName , column.columnType , column.columnSize);
-        }
-        // 剩下的都需要size
-        else
-            return String.format("`%s` %s(%d)" , column.columnName , column.columnType , column.columnSize);
+        return String.format("`%s` %s(%d)" , column.columnName , column.columnType , column.columnSize);
     }
 
 }

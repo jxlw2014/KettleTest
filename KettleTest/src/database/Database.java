@@ -22,6 +22,22 @@ public interface Database extends KettleDatabase
         }
         
         /**
+         * 从数据库名字得到对应的对象，如果没有对应的对象返回null
+         * @param name 数据库的名称
+         */
+        public static DATABASE_TYPE of(String name)
+        {
+            name = name.toUpperCase();
+            for (DATABASE_TYPE type : DATABASE_TYPE.values())
+            {
+                // 如果名字一致
+                if (type.name().toUpperCase().equals(name))
+                    return type;
+            }
+            return null;
+        }
+        
+        /**
          * 返回代码中使用的名称
          */
         public String toString()

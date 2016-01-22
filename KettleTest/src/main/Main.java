@@ -7,9 +7,6 @@ import database.OracleDatabase;
 import env.Environment;
 
 
-
-
-
 public class Main 
 {
     public static void main(String[] args) throws Exception
@@ -115,24 +112,28 @@ public class Main
          */
         Environment.init();
 
-        Database databaseSource = OracleDatabase.Builder.newBuilder()
-                                    .setDatabasename("orcl")
-                                    .setIp("10.214.208.194")
-                                    .setPassword("datarun")
-                                    .setUsername("datarun")
-                                    .setPort(1521).build();
-
-        Database databaseDest = MysqlDatabase.Builder.newBuilder()
-                                    .setDatabasename("import")
-                                    .setIp("localhost")
-                                    .setPassword("liuwei")
-                                    .setUsername("root")
-                                    .setPort(3306).build();
+        System.out.println(Environment.MYSQL_TO_ORACLE);
+        System.out.println(Environment.ORACLE_TO_MYSQL);
         
-        DataImporter importer = DataImporter.newImporter();
-        importer.build(databaseSource , databaseDest);
-        importer.execute();
-    }       
+//        Database databaseSource = OracleDatabase.Builder.newBuilder()
+//                                    .setDatabasename("orcl")
+//                                    .setIp("10.214.208.194")
+//                                    .setPassword("datarun")
+//                                    .setUsername("datarun")
+//                                    .setPort(1521).build();
+//
+//        Database databaseDest = MysqlDatabase.Builder.newBuilder()
+//                                    .setDatabasename("import")
+//                                    .setIp("localhost")
+//                                    .setPassword("liuwei")
+//                                    .setUsername("root")
+//                                    .setPort(3306).build();
+//        
+//        DataImporter importer = DataImporter.newImporter();
+//        importer.build(databaseSource , databaseDest);
+//        importer.execute();
+    }
+    
 }
 
 

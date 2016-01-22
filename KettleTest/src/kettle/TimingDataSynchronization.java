@@ -1,5 +1,6 @@
 package kettle;
 
+import java.util.List;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -7,9 +8,11 @@ import java.util.concurrent.TimeUnit;
 import org.pentaho.di.trans.Trans;
 import org.pentaho.di.trans.TransMeta;
 
+import util.DatabaseUtil;
 import util.KettleUtil;
 import util.KettleUtil.SynchronizationSetting;
 import database.Database;
+import database.Table;
 
 /**
  * 定时数据同步，从一个数据库定时同步另一个数据库
@@ -30,9 +33,11 @@ public class TimingDataSynchronization implements EntireImporter
     private long time = 1;
     private TimeUnit timeUnit = TimeUnit.DAYS;
     
-    // 转换相关
-    private TransMeta transMeta = new TransMeta();
-    private Trans trans;
+    // syn工作的batch大小
+    private int batchSize = 20;
+    
+    // 源、目的数据库
+    private Database source , dest;
     
     // 支持定时操作的线程池
     private ScheduledExecutorService executor; 
@@ -51,16 +56,16 @@ public class TimingDataSynchronization implements EntireImporter
     @Override
     public void build(Database source, Database dest) 
     {
-        // 获得转换元数据
-        KettleUtil.addSynchronizedComponent(transMeta , source , dest , SynchronizationSetting.DEFAULT);
-        // 获得转换
-        trans = new Trans(transMeta);
+        // 这里假设源数据库中的表在目的数据库中已经有对应了，所以不进行复制结构的操作
+        this.source = source;
+        this.dest = dest;
     }
 
     @Override
     public void execute() 
     {
-        executor = Executors.newScheduledThreadPool(4);
+        // 一个线程就够了，只要管理定时操作就可以了
+        executor = Executors.newScheduledThreadPool(1);
         // 定时执行同步操作
         executor.scheduleAtFixedRate(new Runnable()
         {
@@ -68,12 +73,32 @@ public class TimingDataSynchronization implements EntireImporter
             {
                 try
                 {
-                    // TODO syn in batch action
                     long curTime = System.currentTimeMillis();
                     
-                    trans.prepareExecution(null);
-                    trans.startThreads();
-                    trans.waitUntilFinished();
+                    // syn in batch
+                    List<Table> tableList = source.tables();
+                    int cur = 0 , n = tableList.size();
+                    while (cur < n)
+                    {
+                        TransMeta transMeta = new TransMeta();
+                        Trans trans = null;
+                        
+                        int cnt = 1;
+                        while (cur < n && cnt <= batchSize)
+                        {
+                            Table sourceTable = tableList.get(cur);
+                            Table destTable = DatabaseUtil.transformTable(source.databaseType() , dest.databaseType() , sourceTable);
+                            KettleUtil.addSynchronizedComponent(transMeta , source , sourceTable , dest , destTable , SynchronizationSetting.DEFAULT , cnt);
+                            cur ++;
+                            cnt ++;
+                        }
+                       
+                        // execute in batch
+                        trans = new Trans(transMeta);
+                        trans.prepareExecution(null);
+                        trans.startThreads();
+                        trans.waitUntilFinished();
+                    }
                     
                     System.out.println(String.format("The synchronized time is %f" , (double) (System.currentTimeMillis() - curTime) / (double) 1000));                    
                     System.out.println("synchronized success...");
@@ -81,10 +106,6 @@ public class TimingDataSynchronization implements EntireImporter
                 } catch (Exception e)
                 {
                     System.out.println("synchronized fail...");
-                } finally
-                {
-                    // 清除转换信息
-                    trans.cleanup();
                 }
             }
         } , 0 , time , timeUnit);

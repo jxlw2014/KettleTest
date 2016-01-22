@@ -24,6 +24,8 @@ public class DataImporter implements EntireImporter
         NEW , BUILD , EXECUTE;
     }
     
+    // 进行import操作的batch大小
+    private int batchSize = 20;
     // 源数据库和目的数据库
     private Database source , dest;
     
@@ -79,7 +81,7 @@ public class DataImporter implements EntireImporter
                 System.out.println("Start import...");
              
                 // 批量执行转换
-                int batchSize = 20 , cur = 0;
+                int cur = 0;
                 // 获得tables
                 List<Table> tableList = source.tables();
                 while (cur < tableList.size())
