@@ -63,7 +63,7 @@ public class Environment
      */
     private static void initDatabaseTypeMap()
     {
-        File confDir = new File("src/conf/databasetype");
+        File confDir = new File("src/databasetype");
         // 判断所有的配置文件，配置文件需要命名为oracle_xxx
         for (File file : confDir.listFiles())
         {

@@ -15,7 +15,7 @@ import database.Database;
 import database.Table;
 
 /**
- * 定时数据同步，从一个数据库定时同步另一个数据库
+ * 定时数据同步，从一个数据库定时同步另一个数据库。假定两个数据库之间已经执行过import的操作，两个数据库有一致的表结构
  */
 public class TimingDataSynchronization implements EntireImporter
 {

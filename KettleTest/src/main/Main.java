@@ -11,40 +11,8 @@ public class Main
 {
     public static void main(String[] args) throws Exception
     {
-        // trans
-        /*
-        KettleEnvironment.init();
-        KettleDatabaseRepository repository = new KettleDatabaseRepository();
 
-        DatabaseMeta meta = new DatabaseMeta("mysql_conn" , "mysql" , "jdbc" , "127.0.0.1" , "test" , "3306" , "root" , "liuwei");
-        KettleDatabaseRepositoryMeta resMeta = new KettleDatabaseRepositoryMeta("kettle" , "kettle" , "trans" , meta);
-        repository.init(resMeta);
-        
-        repository.connect("admin" , "admin");
-        RepositoryDirectoryInterface directory = repository.loadRepositoryDirectoryTree();
-        
-        TransMeta tranMeta = repository.loadTransformation("trans" , directory , null , true , null);
-        Trans tran = new Trans(tranMeta);
-        
-        TransformationManager.getInstance().addTransformation(tran);
-        TransformationGraph graph = TransformationManager.getInstance().getTransformationTopologicalGraph(new TableInfo("test2" , "table3"));
-        */
-        
         /*
-        // 本地同步测试
-        KettleEnvironment.init();
-        
-        DatabaseMeta databaseMeta1 = null;
-        DatabaseMeta databaseMeta2 = null;
-        try
-        {
-            databaseMeta1 = new DatabaseMeta("conn_1" , "Mysql" , "jdbc" , "10.214.224.64" , "import" , "3306" , "root" , "liuwei");
-            databaseMeta2 = new DatabaseMeta("conn_2" , "Mysql" , "jdbc" , "10.214.224.64" , "import" , "3306" , "root" , "liuwei");
-        } catch (Exception e)
-        {
-            System.out.println(e.getMessage());
-        }
-
         TransMeta tranMeta = new TransMeta();
         
         // input tables
@@ -111,27 +79,24 @@ public class Main
          * 数据导入测试
          */
         Environment.init();
-
-        System.out.println(Environment.MYSQL_TO_ORACLE);
-        System.out.println(Environment.ORACLE_TO_MYSQL);
         
-//        Database databaseSource = OracleDatabase.Builder.newBuilder()
-//                                    .setDatabasename("orcl")
-//                                    .setIp("10.214.208.194")
-//                                    .setPassword("datarun")
-//                                    .setUsername("datarun")
-//                                    .setPort(1521).build();
-//
-//        Database databaseDest = MysqlDatabase.Builder.newBuilder()
-//                                    .setDatabasename("import")
-//                                    .setIp("localhost")
-//                                    .setPassword("liuwei")
-//                                    .setUsername("root")
-//                                    .setPort(3306).build();
-//        
-//        DataImporter importer = DataImporter.newImporter();
-//        importer.build(databaseSource , databaseDest);
-//        importer.execute();
+        Database databaseSource = OracleDatabase.Builder.newBuilder()
+                                    .setDatabasename("orcl")
+                                    .setIp("10.214.208.194")
+                                    .setPassword("datarun")
+                                    .setUsername("datarun")
+                                    .setPort(1521).build();
+
+        Database databaseDest = MysqlDatabase.Builder.newBuilder()
+                                    .setDatabasename("import")
+                                    .setIp("localhost")
+                                    .setPassword("liuwei")
+                                    .setUsername("root")
+                                    .setPort(3306).build();
+        
+        DataImporter importer = DataImporter.newImporter();
+        importer.build(databaseSource , databaseDest);
+        importer.execute();
     }
     
 }

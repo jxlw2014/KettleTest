@@ -165,7 +165,7 @@ public class KettleUtil
     }
     
     /**
-     * 添加同步组件
+     * 为数据库中的所有表添加转换组件，可能会导致连接过多
      * @param transMeta 转换元数据
      * @param source    源数据库
      * @param dest      目的数据库
@@ -276,6 +276,8 @@ public class KettleUtil
         transMeta.addStep(syn);
         
         transMeta.addTransHop(new TransHopMeta(merge , syn));
+        
+        System.out.println("add syn component to table " + sourceTable.getTableName());
     }
     
 }

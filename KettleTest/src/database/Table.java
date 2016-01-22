@@ -4,7 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * 数据库表的对应类，只保存一个时期的结果，不代表数据库中表的真实信息
+ * 数据库表的对应类，不能保证和数据库中的表信息保持一致
  */
 public class Table
 {
