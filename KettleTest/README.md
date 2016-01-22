@@ -1,0 +1,1 @@
+Kettle test , need the jars in kettle's lib directory and jdbc jars for mysql and oracle
