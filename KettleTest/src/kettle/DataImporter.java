@@ -35,6 +35,9 @@ public class DataImporter implements EntireImporter
     // 初始状态是new
     private STATE state = STATE.NEW;
     
+    // 导入设置
+    private ImportSetting setting = ImportSetting.DEFAULT;
+    
     // 判断是否shutdown
     private AtomicBoolean isShutdown = new AtomicBoolean(false);
     
@@ -46,6 +49,14 @@ public class DataImporter implements EntireImporter
     public static DataImporter newImporter()
     {
         return new DataImporter();
+    }
+    
+    /**
+     * 设置导入的参数
+     */
+    public void setSetting(ImportSetting setting)
+    {
+        this.setting = setting;
     }
     
     @Override
@@ -105,7 +116,7 @@ public class DataImporter implements EntireImporter
                     {
                         Table sourceTable = tableList.get(cur);
                         Table destTable = DatabaseUtil.transformTable(source.databaseType() , dest.databaseType() , sourceTable);
-                        KettleUtil.addImportComponent(transMeta , source , sourceTable , dest , destTable , ImportSetting.DEFAULT , cnt);
+                        KettleUtil.addImportComponent(transMeta , source , sourceTable , dest , destTable , this.setting , cnt);
                         cur ++;
                         cnt ++;
                     }

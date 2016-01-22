@@ -40,6 +40,9 @@ public class TimingDataSynchronization implements EntireImporter
     private Database source;
     private Database dest;
     
+    // 同步参数的设置
+    private SynchronizationSetting setting = SynchronizationSetting.DEFAULT;
+    
     // 支持定时操作的线程池
     private ScheduledExecutorService executor; 
     
@@ -52,6 +55,14 @@ public class TimingDataSynchronization implements EntireImporter
     {
         this.time = time;
         this.timeUnit = timeUnit;
+    }
+    
+    /**
+     * 设置同步的参数
+     */
+    public void setSetting(SynchronizationSetting setting)
+    {
+        this.setting = setting;
     }
 
     @Override
@@ -92,7 +103,7 @@ public class TimingDataSynchronization implements EntireImporter
                             // 存在没有destTable的可能，因为没有执行一遍copySchema。所以需要判断一下
                             if (!dest.containsTable(destTable.getTableName()))
                                 dest.createTable(destTable);
-                            KettleUtil.addSynchronizedComponent(transMeta , source , sourceTable , dest , destTable , SynchronizationSetting.DEFAULT , cnt);
+                            KettleUtil.addSynchronizedComponent(transMeta , source , sourceTable , dest , destTable , setting , cnt);
                             cur ++;
                             cnt ++;
                         }
