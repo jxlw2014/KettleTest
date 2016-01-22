@@ -4,6 +4,7 @@ import kettle.DataImporter;
 import database.Database;
 import database.MysqlDatabase;
 import database.OracleDatabase;
+import env.Constants;
 import env.Environment;
 
 
@@ -11,7 +12,6 @@ public class Main
 {
     public static void main(String[] args)
     {
-
         /*
         TransMeta tranMeta = new TransMeta();
         
@@ -85,14 +85,14 @@ public class Main
                                     .setIp("10.214.208.194")
                                     .setPassword("datarun")
                                     .setUsername("datarun")
-                                    .setPort(1521).build();
+                                    .setPort(Constants.DEFAULT_ORACLE_PORT).build();
 
         Database databaseDest = MysqlDatabase.Builder.newBuilder()
                                     .setDatabasename("import")
                                     .setIp("localhost")
                                     .setPassword("liuwei")
                                     .setUsername("root")
-                                    .setPort(3306).build();
+                                    .setPort(Constants.DEFAULT_MYSQL_PORT).build();
         
         DataImporter importer = DataImporter.newImporter();
         importer.build(databaseSource , databaseDest);

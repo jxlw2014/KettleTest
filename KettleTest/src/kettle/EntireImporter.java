@@ -13,11 +13,22 @@ public interface EntireImporter
      * @param dest   目的数据库
      */
     public void build(Database source , Database dest);
+    
+    /**
+     * 每次导入处理的表的数目，如果太大可能会导致数据库连接过多而导致kettle无法使用
+     * @param batchSize 表的数目
+     */
+    public void setBatchSize(int batchSize);
 
     /**
      * 执行导入操作
      */
     public void execute();
+    
+    /**
+     * 停止导入
+     */
+    public void shutdown();
 }
 
 

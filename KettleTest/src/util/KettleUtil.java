@@ -28,12 +28,12 @@ public class KettleUtil
         // 是否工作在batch提交下
         private boolean inBatch = true;
         // 提交的记录数目
-        private int commitSize = 5000;
+        private int commitSize = 1000;
         
         /**
          * 默认的同步参数设置
          */
-        public static final ImportSetting DEFAULT = new ImportSetting().setInBatch(true).setCommitSize(2000);
+        public static final ImportSetting DEFAULT = new ImportSetting().setInBatch(true).setCommitSize(1000);
         
         private ImportSetting() { }
         
@@ -84,7 +84,7 @@ public class KettleUtil
          *  默认的同步参数
          */
         public static final SynchronizationSetting DEFAULT = new SynchronizationSetting()
-                                                                    .setCommitSize(2000).setInBatch(true);
+                                                                    .setCommitSize(1000).setInBatch(true);
         
         /**
          * 设置提交的记录数目

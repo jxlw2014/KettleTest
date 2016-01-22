@@ -50,6 +50,11 @@ public interface Database extends KettleDatabase
      * 获得数据库中对应的表的信息
      */
     public List<Table> tables();
+    
+    /**
+     * 数据库中是否包含表tablename，以上一次获得的数据库信息为判断依据
+     */
+    public boolean containsTable(String tablename);
 
     /**
      * 获得数据库的名称

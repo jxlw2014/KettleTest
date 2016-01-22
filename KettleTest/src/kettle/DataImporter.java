@@ -1,6 +1,7 @@
 package kettle;
 
 import java.util.List;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.pentaho.di.trans.Trans;
 import org.pentaho.di.trans.TransMeta;
@@ -25,12 +26,17 @@ public class DataImporter implements EntireImporter
     }
     
     // 进行import操作的batch大小
-    private int batchSize = 20;
+    private int batchSize = 5;
+    
     // 源数据库和目的数据库
-    private Database source , dest;
+    private Database source = null;
+    private Database dest = null;
     
     // 初始状态是new
     private STATE state = STATE.NEW;
+    
+    // 判断是否shutdown
+    private AtomicBoolean isShutdown = new AtomicBoolean(false);
     
     private DataImporter() { }
     
@@ -60,10 +66,14 @@ public class DataImporter implements EntireImporter
                 this.dest = dest;
             }   
             else
+            {
                 System.out.println("copy scheme fail...");
+            }
         }
         else
+        {
             System.out.println("You should finish executing first...");
+        }
     }   
     
     @Override
@@ -84,7 +94,7 @@ public class DataImporter implements EntireImporter
                 int cur = 0;
                 // 获得tables
                 List<Table> tableList = source.tables();
-                while (cur < tableList.size())
+                while (cur < tableList.size() && !isShutdown.get())
                 {
                     int cnt = 1;
                     TransMeta transMeta = new TransMeta();
@@ -105,6 +115,9 @@ public class DataImporter implements EntireImporter
                     trans.prepareExecution(null);
                     trans.startThreads();
                     trans.waitUntilFinished();
+                    
+                    transMeta = null;
+                    trans = null;
                 }
                 
                 long execTime = System.currentTimeMillis() - curTime;
@@ -119,7 +132,24 @@ public class DataImporter implements EntireImporter
             state = STATE.NEW;
         }
         else
+        {
             System.out.println("You need build before execute...");
+        }
+    }
+
+    @Override
+    public void setBatchSize(int batchSize) 
+    {
+        this.batchSize = batchSize;
+    }
+    
+    @Override
+    public void shutdown()
+    {
+        this.isShutdown.set(true);
     }
 
 }
+
+
+

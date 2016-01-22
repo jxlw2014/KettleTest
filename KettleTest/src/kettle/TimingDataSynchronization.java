@@ -34,10 +34,11 @@ public class TimingDataSynchronization implements EntireImporter
     private TimeUnit timeUnit = TimeUnit.DAYS;
     
     // syn工作的batch大小
-    private int batchSize = 20;
+    private int batchSize = 5;
     
     // 源、目的数据库
-    private Database source , dest;
+    private Database source;
+    private Database dest;
     
     // 支持定时操作的线程池
     private ScheduledExecutorService executor; 
@@ -56,7 +57,7 @@ public class TimingDataSynchronization implements EntireImporter
     @Override
     public void build(Database source, Database dest) 
     {
-        // 这里假设源数据库中的表在目的数据库中已经有对应了，所以不进行复制结构的操作
+        // 复制结构看情况进行
         this.source = source;
         this.dest = dest;
     }
@@ -88,6 +89,9 @@ public class TimingDataSynchronization implements EntireImporter
                         {
                             Table sourceTable = tableList.get(cur);
                             Table destTable = DatabaseUtil.transformTable(source.databaseType() , dest.databaseType() , sourceTable);
+                            // 存在没有destTable的可能，因为没有执行一遍copySchema。所以需要判断一下
+                            if (!dest.containsTable(destTable.getTableName()))
+                                dest.createTable(destTable);
                             KettleUtil.addSynchronizedComponent(transMeta , source , sourceTable , dest , destTable , SynchronizationSetting.DEFAULT , cnt);
                             cur ++;
                             cnt ++;
@@ -98,6 +102,9 @@ public class TimingDataSynchronization implements EntireImporter
                         trans.prepareExecution(null);
                         trans.startThreads();
                         trans.waitUntilFinished();
+                        
+                        transMeta = null;
+                        trans = null;
                     }
                     
                     System.out.println(String.format("The synchronized time is %f" , (double) (System.currentTimeMillis() - curTime) / (double) 1000));                    
@@ -109,6 +116,12 @@ public class TimingDataSynchronization implements EntireImporter
                 }
             }
         } , 0 , time , timeUnit);
+    }
+    
+    @Override
+    public void setBatchSize(int batchSize)
+    {
+        this.batchSize = batchSize;
     }
     
     /**

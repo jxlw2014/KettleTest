@@ -82,26 +82,25 @@ public final class DatabaseUtil
     }
     
     /**
-     * preview数据库中的表
-     * @param 数据库
-     * @param 表格
-     * @param 数据的上限
-     */
-    public static Iterable<List<String>> previewData(Database database , Table table , int limit)
-    {
-        // TODO 考虑实现
-        
-        
-        return null;
-    }
-    
-    /**
-     * 获得给定一列对应的sql字符串，具体是否可行还需要测试
+     * 获得给定一列对应的sql字符串，具体是否可行还需要测试。因为一些类型后面加size不行
      * @param 一列的信息
      */
+    // TODO check the correctness
     public static String getSql(TableColumn column)
     {
-        return String.format("`%s` %s(%d)" , column.columnName , column.columnType , column.columnSize);
+        // 特殊处理一下date
+        if (column.columnType.contains("DATE"))
+            return String.format("`%s` %s" , column.columnName , column.columnType);
+        // 特殊处理一下DateTime
+        else if (column.columnType.contains("VARCHAR"))
+        {
+            if (column.columnSize >= 255)
+                return String.format("`%s` %s" , column.columnName , "TEXT");
+            else
+                return String.format("`%s` %s(%d)" , column.columnName , column.columnType , column.columnSize);
+        }
+        else
+            return String.format("`%s` %s(%d)" , column.columnName , column.columnType , column.columnSize);
     }
 
 }
