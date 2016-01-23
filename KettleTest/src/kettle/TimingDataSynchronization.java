@@ -87,6 +87,8 @@ public class TimingDataSynchronization implements DatabaseImporter , TimingImpor
     {
         try
         {
+            System.out.println("start synchronizing...");
+            
             long curTime = System.currentTimeMillis();
             
             // syn in batch

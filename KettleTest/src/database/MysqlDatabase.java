@@ -187,7 +187,7 @@ public class MysqlDatabase extends AbstractDatabase
                 // 进行table的初始化
                 try
                 {
-                    String sql = String.format("select * from %s" , tableName);
+                    String sql = String.format("select * from %s limit 1" , tableName);
                     result = statement.executeQuery(sql);
                     ResultSetMetaData meta = result.getMetaData();
                     

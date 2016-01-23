@@ -1,6 +1,5 @@
 package main;
 
-import kettle.DataImporter;
 import kettle.TimingDataSynchronization;
 import database.Database;
 import database.MysqlDatabase;
