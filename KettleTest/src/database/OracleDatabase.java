@@ -350,7 +350,7 @@ public class OracleDatabase extends AbstractDatabase
         for (TableColumn column : table.getColumnList())
         {
             // 获得对应的sql
-            String str = DatabaseUtil.getSql(column);
+            String str = DatabaseUtil.getSql(column , this.databaseType);
             if (first)
                 first = false;
             else

@@ -82,14 +82,20 @@ public final class DatabaseUtil
     }
     
     /**
-     * 获得给定一列对应的sql字符串，具体是否可行还需要测试。因为一些类型后面加size不行
+     * 获得给定一列对应的sql字符串，具体是否可行还需要测试。这里的trick主要都是为了从oracle到mysql的兼容，没有任何扩展性，只是针对这些数据库
      * @param 一列的信息
      */
     // TODO check the correctness
-    public static String getSql(TableColumn column)
+    public static String getSql(TableColumn column , DATABASE_TYPE databaseType)
     {
         // 特殊处理一下date
         if (column.columnType.contains("DATE"))
+            return String.format("`%s` %s" , column.columnName , column.columnType);
+        // 特殊处理一下blob
+        else if (column.columnType.contains("BLOB"))
+            return String.format("`%s` %s" , column.columnName , column.columnType);
+        // 特殊处理一下timestamp
+        else if (column.columnType.equals("TIMESTAMP"))
             return String.format("`%s` %s" , column.columnName , column.columnType);
         // 特殊处理一下DateTime
         else if (column.columnType.contains("VARCHAR"))
@@ -99,6 +105,7 @@ public final class DatabaseUtil
             else
                 return String.format("`%s` %s(%d)" , column.columnName , column.columnType , column.columnSize);
         }
+        // 其它的就按照基本的格式获取
         else
             return String.format("`%s` %s(%d)" , column.columnName , column.columnType , column.columnSize);
     }

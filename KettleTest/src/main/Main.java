@@ -80,14 +80,14 @@ public class Main
          */
         Environment.init();
         
-        Database databaseSource = OracleDatabase.Builder.newBuilder()
+        Database sourceDatabase = OracleDatabase.Builder.newBuilder()
                                     .setDatabasename("orcl")
                                     .setIp("10.214.208.194")
                                     .setPassword("datarun")
                                     .setUsername("datarun")
                                     .setPort(Constants.DEFAULT_ORACLE_PORT).build();
 
-        Database databaseDest = MysqlDatabase.Builder.newBuilder()
+        Database destDatabase = MysqlDatabase.Builder.newBuilder()
                                     .setDatabasename("import")
                                     .setIp("localhost")
                                     .setPassword("liuwei")
@@ -95,7 +95,7 @@ public class Main
                                     .setPort(Constants.DEFAULT_MYSQL_PORT).build();
         
         DataImporter importer = DataImporter.newImporter();
-        importer.build(databaseSource , databaseDest);
+        importer.build(sourceDatabase , destDatabase);
         importer.execute();
     }
     

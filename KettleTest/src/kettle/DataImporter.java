@@ -15,7 +15,7 @@ import database.Table;
 /**
  * 数据导入类，实现将一个数据库中的所有表数据导入到另一个数据库中的功能，底层使用kettle核心类实现
  */
-public class DataImporter implements EntireImporter 
+public class DataImporter implements DatabaseImporter 
 {
     /**
      * 工作状态
@@ -60,8 +60,10 @@ public class DataImporter implements EntireImporter
     }
     
     @Override
-    public void build(Database source , Database dest)
+    public boolean build(Database source , Database dest)
     {
+        // 默认的设置
+        this.isShutdown.set(false);
         System.out.println("Start build the necessary things for transformation...");
         // 如果是初始状态或者build过
         if (state == STATE.NEW || state == STATE.BUILD)
@@ -75,20 +77,23 @@ public class DataImporter implements EntireImporter
                 // 设置数据源和数据目的地
                 this.source = source;
                 this.dest = dest;
+                return true;
             }   
             else
             {
                 System.out.println("copy scheme fail...");
+                return false;
             }
         }
         else
         {
             System.out.println("You should finish executing first...");
+            return false;
         }
     }   
     
     @Override
-    public void execute()
+    public boolean execute()
     {
         // 如果已经BUILD了
         if (state == STATE.BUILD)
@@ -129,6 +134,8 @@ public class DataImporter implements EntireImporter
                     
                     transMeta = null;
                     trans = null;
+                    
+                    System.out.println(String.format("Import %d table success..." , cur + 1));
                 }
                 
                 long execTime = System.currentTimeMillis() - curTime;
@@ -137,14 +144,17 @@ public class DataImporter implements EntireImporter
             } catch (Exception e)
             {
                 System.out.println("import fail...");
+                return false;
             }
 
             // 状态回到初始
             state = STATE.NEW;
+            return true;
         }
         else
         {
             System.out.println("You need build before execute...");
+            return false;
         }
     }
 

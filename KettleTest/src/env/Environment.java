@@ -82,10 +82,10 @@ public class Environment
                 {
                     String[] strs = line.split(",");
                     String oracleType = strs[0];
-                    String mysqlType = strs[1];
+                    String otherType = strs[1];
                     // ¸üÐÂÓ³Éä±í
-                    updateTypeMap(source , dest , oracleType , mysqlType);
-                    updateTypeMap(dest , source , mysqlType , oracleType);
+                    updateTypeMap(source , dest , oracleType , otherType);
+                    updateTypeMap(dest , source , otherType , oracleType);
                 }
                 
             } catch (FileNotFoundException e_file) 
