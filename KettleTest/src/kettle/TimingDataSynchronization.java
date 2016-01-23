@@ -25,14 +25,10 @@ public class TimingDataSynchronization implements DatabaseImporter , TimingImpor
     /**
      * 获得新的同步实例
      */
-    public TimingDataSynchronization newInstance()
+    public static TimingDataSynchronization newInstance()
     {
         return new TimingDataSynchronization();
     }
-    
-    // 时间间隔，默认为一天
-    private long time = 1;
-    private TimeUnit timeUnit = TimeUnit.DAYS;
     
     // syn工作的batch大小
     private int batchSize = 5;
@@ -49,17 +45,6 @@ public class TimingDataSynchronization implements DatabaseImporter , TimingImpor
     
     // 是否停止的标志
     private AtomicBoolean isShutdown = new AtomicBoolean(false);
-    
-    /**
-     * 设置同步时间间隔
-     * @param time      时间间隔
-     * @param timeUnit  时间单位
-     */
-    public void setInterval(long time , TimeUnit timeUnit)
-    {
-        this.time = time;
-        this.timeUnit = timeUnit;
-    }
     
     /**
      * 设置同步的参数
@@ -83,7 +68,7 @@ public class TimingDataSynchronization implements DatabaseImporter , TimingImpor
     /**
      * 定时执行同步任务
      */
-    public void timingExecute()
+    public void timingExecute(long time , TimeUnit timeUnit)
     {
         // 一个线程就够了，只要管理定时操作就可以了
         executor = Executors.newScheduledThreadPool(1);
@@ -119,7 +104,10 @@ public class TimingDataSynchronization implements DatabaseImporter , TimingImpor
                     Table destTable = DatabaseUtil.transformTable(source.databaseType() , dest.databaseType() , sourceTable);
                     // 存在没有destTable的可能，因为没有执行一遍copySchema。所以需要判断一下
                     if (!dest.containsTable(destTable.getTableName()))
+                    {
                         dest.createTable(destTable);
+                        System.out.println(String.format("Create table %s due to the table is not exists in dest database..." , sourceTable.getTableName()));
+                    }
                     KettleUtil.addSynchronizedComponent(transMeta , source , sourceTable , dest , destTable , setting , cnt);
                     cur ++;
                     cnt ++;
@@ -134,7 +122,7 @@ public class TimingDataSynchronization implements DatabaseImporter , TimingImpor
                 transMeta = null;
                 trans = null;
                 
-                System.out.println(String.format("Syn %d table success..." , cur + 1));
+                System.out.println(String.format("Syn %d table success..." , cur));
             }
             
             System.out.println(String.format("The synchronized time is %f" , (double) (System.currentTimeMillis() - curTime) / (double) 1000));                    

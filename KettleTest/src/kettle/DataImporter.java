@@ -135,7 +135,7 @@ public class DataImporter implements DatabaseImporter
                     transMeta = null;
                     trans = null;
                     
-                    System.out.println(String.format("Import %d table success..." , cur + 1));
+                    System.out.println(String.format("Import %d table success..." , cur));
                 }
                 
                 long execTime = System.currentTimeMillis() - curTime;

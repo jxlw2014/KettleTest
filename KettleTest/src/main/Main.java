@@ -1,6 +1,7 @@
 package main;
 
 import kettle.DataImporter;
+import kettle.TimingDataSynchronization;
 import database.Database;
 import database.MysqlDatabase;
 import database.OracleDatabase;
@@ -94,9 +95,9 @@ public class Main
                                     .setUsername("root")
                                     .setPort(Constants.DEFAULT_MYSQL_PORT).build();
         
-        DataImporter importer = DataImporter.newImporter();
-        importer.build(sourceDatabase , destDatabase);
-        importer.execute();
+        TimingDataSynchronization syn = TimingDataSynchronization.newInstance();
+        syn.build(sourceDatabase , destDatabase);
+        syn.execute();
     }
     
 }
