@@ -17,4 +17,13 @@ public final class Constants
      */
     public static final int DEFAULT_ORACLE_PORT = 1521;
     
+    /**
+     * 默认的同步batch大小
+     */
+    public static final int DEFAULT_BATCH_SIZE = 1;
+    
 }
+
+
+
+

@@ -14,6 +14,7 @@ import util.KettleUtil;
 import util.KettleUtil.SynchronizationSetting;
 import database.Database;
 import database.Table;
+import env.Constants;
 
 /**
  * 定时数据同步，从一个数据库定时同步另一个数据库。假定两个数据库之间已经执行过import的操作，两个数据库有一致的表结构
@@ -31,7 +32,7 @@ public class TimingDataSynchronization implements DatabaseImporter , TimingImpor
     }
     
     // syn工作的batch大小
-    private int batchSize = 5;
+    private int batchSize = Constants.DEFAULT_BATCH_SIZE;
     
     // 源、目的数据库
     private Database source;
@@ -104,6 +105,7 @@ public class TimingDataSynchronization implements DatabaseImporter , TimingImpor
                 {
                     Table sourceTable = tableList.get(cur);
                     Table destTable = DatabaseUtil.transformTable(source.databaseType() , dest.databaseType() , sourceTable);
+                    
                     // 存在没有destTable的可能，因为没有执行一遍copySchema。所以需要判断一下
                     if (!dest.containsTable(destTable.getTableName()))
                     {
@@ -111,6 +113,7 @@ public class TimingDataSynchronization implements DatabaseImporter , TimingImpor
                         System.out.println(String.format("Create table %s due to the table is not exists in dest database..." , sourceTable.getTableName()));
                     }
                     KettleUtil.addSynchronizedComponent(transMeta , source , sourceTable , dest , destTable , setting , cnt);
+                        
                     cur ++;
                     cnt ++;
                 }
@@ -120,9 +123,6 @@ public class TimingDataSynchronization implements DatabaseImporter , TimingImpor
                 trans.prepareExecution(null);
                 trans.startThreads();
                 trans.waitUntilFinished();
-                
-                transMeta = null;
-                trans = null;
                 
                 System.out.println(String.format("Syn %d table success..." , cur));
             }

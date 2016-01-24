@@ -11,6 +11,7 @@ import util.KettleUtil;
 import util.KettleUtil.ImportSetting;
 import database.Database;
 import database.Table;
+import env.Constants;
 
 /**
  * 数据导入类，实现将一个数据库中的所有表数据导入到另一个数据库中的功能，底层使用kettle核心类实现
@@ -26,7 +27,7 @@ public class DataImporter implements DatabaseImporter
     }
     
     // 进行import操作的batch大小
-    private int batchSize = 5;
+    private int batchSize = Constants.DEFAULT_BATCH_SIZE;
     
     // 源数据库和目的数据库
     private Database source = null;

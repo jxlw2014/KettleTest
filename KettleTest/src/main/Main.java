@@ -8,73 +8,11 @@ import env.Constants;
 import env.Environment;
 
 
+
 public class Main 
 {
     public static void main(String[] args)
     {
-        /*
-        TransMeta tranMeta = new TransMeta();
-        
-        // input tables
-        TableInputMeta inputMeta1 = new TableInputMeta();
-        inputMeta1.setDatabaseMeta(databaseMeta1);
-        inputMeta1.setSQL("select * from test1");
-        
-        StepMeta inputStepMeta1 = new StepMeta("input1" , inputMeta1);
-        tranMeta.addStep(inputStepMeta1);
-        
-        TableInputMeta inputMeta2 = new TableInputMeta();
-        inputMeta2.setDatabaseMeta(databaseMeta2);
-        inputMeta2.setSQL("select * from test2");
-        
-        StepMeta inputStepMeta2 = new StepMeta("input2" , inputMeta2);
-        tranMeta.addStep(inputStepMeta2);
-        
-        // merge
-        MergeRowsMeta rowsMeta = new MergeRowsMeta();
-        rowsMeta.setFlagField("flagfield");
-        rowsMeta.setKeyFields(new String[] {"name" , "id"});
-        rowsMeta.setValueFields(new String[] {"name" , "id"});
-        
-        // 设置旧的和新的
-        rowsMeta.getStepIOMeta().setInfoSteps(new StepMeta[] {inputStepMeta2 , inputStepMeta1});
-        
-        StepMeta merge = new StepMeta("merge" , rowsMeta);
-        tranMeta.addStep(merge);
-        
-        tranMeta.addTransHop(new TransHopMeta(inputStepMeta1 , merge));
-        tranMeta.addTransHop(new TransHopMeta(inputStepMeta2 , merge));
-        
-        // Syn
-        SynchronizeAfterMergeMeta synMeta = new SynchronizeAfterMergeMeta();
-        synMeta.setDatabaseMeta(databaseMeta2);
-        synMeta.setTableName("test2");
-        
-        synMeta.setKeyStream(new String[] {"name" , "id"});
-        synMeta.setKeyLookup(new String[] {"name" , "id"});
-        synMeta.setKeyCondition(new String[] {"=" , "="});
-        synMeta.setKeyStream2(new String[] {"" , ""});
-        
-        synMeta.setUpdateLookup(new String[] {"name" , "id"});
-        synMeta.setUpdateStream(new String[] {"name" , "id"});
-        synMeta.setUpdate(new Boolean[] {true , true});
-        
-        synMeta.setOperationOrderField("flagfield");
-        synMeta.setOrderDelete("deleted");
-        synMeta.setOrderInsert("new");
-        synMeta.setOrderUpdate("changed");
-        
-        StepMeta syn = new StepMeta("syn" , synMeta);
-        tranMeta.addStep(syn);
-        
-        tranMeta.addTransHop(new TransHopMeta(merge , syn));
-            
-        Trans tran = new Trans(tranMeta);
-        tran.prepareExecution(null);
-        tran.startThreads();
-        tran.waitUntilFinished();
-        */
-        
         /**
          * 数据导入测试
          */
@@ -97,9 +35,50 @@ public class Main
         TimingDataSynchronization syn = TimingDataSynchronization.newInstance();
         syn.build(sourceDatabase , destDatabase);
         syn.execute();
+        
+//        Table sourceTable = null , destTable = null;
+//        for (Table table : sourceDatabase.tables())
+//        {
+//            if (table.getTableName().equals("EHV_OMDS_MEAS_ICE"))
+//            {
+//                sourceTable = table;
+//                destTable = DatabaseUtil.transformTable(sourceDatabase.databaseType() , 
+//                                                        destDatabase.databaseType() , sourceTable);
+//                break;
+//            }
+//        }
+//        
+//        TransMeta transMeta = new TransMeta();
+//        KettleUtil.addSynchronizedComponent(transMeta , sourceDatabase , sourceTable , destDatabase , destTable , SynchronizationSetting.DEFAULT , 1);
+//        destDatabase.createTable(destTable);
+//        Trans trans = new Trans(transMeta);
+//        
+//        try
+//        {
+//            trans.prepareExecution(null);
+//            trans.startThreads();
+//            trans.waitUntilFinished();
+//            
+//        } catch (Exception e) { }
+        
+        /**
+         * TODO test the sql server
+         */
+//        try
+//        {
+//            Class.forName("com.microsoft.sqlserver.jdbc.SQLServerDriver");
+//            Connection conn = DriverManager.getConnection("jdbc:sqlserver://10.214.224.27:1433;database=cgysd" , "cgysd" , "cgysd"); 
+//            System.out.println("conn success...");
+//            
+//        } catch (Exception e)
+//        {
+//            e.printStackTrace();
+//        }
     }
     
 }
+
+
 
 
 

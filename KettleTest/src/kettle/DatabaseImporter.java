@@ -15,8 +15,8 @@ public interface DatabaseImporter
     public boolean build(Database source , Database dest);
     
     /**
-     * 每次导入处理的表的数目，如果太大可能会导致数据库连接过多而导致kettle无法使用
-     * @param batchSize 表的数目
+     * 每次导入处理的表的数目，如果太大可能会导致数据库连接过多而导致kettle无法使用。默认的batch大小在Constants中设置
+     * @param batchSize 并发进行处理的表的数目
      */
     public void setBatchSize(int batchSize);
 
