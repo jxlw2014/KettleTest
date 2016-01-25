@@ -49,9 +49,19 @@ public final class DatabaseUtil
             // 进行每一列的转换
             for (TableColumn column : table.getColumnList())
             {
-                ans.addColumn(TableColumn.newColumn(column.columnName , 
-                    transformColumnType(source , dest , column.columnType) ,
-                    column.columnSize));
+                // 需要判断特殊的columnSize，如果是表示无穷大的-1，在mysql中需要用一个同样支持很长的值的数据结构来对应
+                if (column.columnSize < 0)
+                {
+                    // the size is not used to create a column
+                    ans.addColumn(TableColumn.newColumn(column.columnName , 
+                                                        "MEDIUMTEXT" , 1));
+                }
+                else
+                {
+                    ans.addColumn(TableColumn.newColumn(column.columnName , 
+                        transformColumnType(source , dest , column.columnType) ,
+                        column.columnSize));
+                }
             }
             return ans;
         }
@@ -102,7 +112,10 @@ public final class DatabaseUtil
             else if (column.columnType.contains("BLOB"))
                 return String.format("`%s` %s" , column.columnName , column.columnType);
             // 特殊处理一下timestamp
-            else if (column.columnType.equals("TIMESTAMP"))
+            else if (column.columnType.contains("TIMESTAMP"))
+                return String.format("`%s` %s" , column.columnName , column.columnType);
+            // 特殊处理一下text
+            else if (column.columnType.contains("TEXT"))
                 return String.format("`%s` %s" , column.columnName , column.columnType);
             // varchar在mysql里面特别处理一下
             else if (column.columnType.contains("VARCHAR") && databaseType == DATABASE_TYPE.MYSQL)
