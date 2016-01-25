@@ -18,6 +18,11 @@ public final class Constants
     public static final int DEFAULT_ORACLE_PORT = 1521;
     
     /**
+     * SQLSERVER的默认接口
+     */
+    public static final int DEFAULT_SQLSERVER_PORT = 1433;
+    
+    /**
      * 默认的同步batch大小
      */
     public static final int DEFAULT_BATCH_SIZE = 1;

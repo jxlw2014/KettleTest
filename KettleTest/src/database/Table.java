@@ -96,6 +96,8 @@ public class Table
         boolean first = true;
         StringBuilder builder = new StringBuilder();
         builder.append("[");
+        // for more detail debug information
+        builder.append(getTableName() + ": ");
         for (TableColumn column : columnList)
         {
             if (first)

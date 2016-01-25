@@ -3,12 +3,13 @@ package database;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.ResultSet;
-import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import org.pentaho.di.core.database.DatabaseMeta;
@@ -17,10 +18,8 @@ import util.DatabaseUtil;
 import database.Table.TableColumn;
 
 /**
- * SQLServer的对应实现
+ * SQLServer的对应实现，SQLSERVER版本为2008r2
  */
-
-// TODO mofity the details in function implement
 public class SQLServerDatabase extends AbstractDatabase 
 {
     /**
@@ -132,6 +131,49 @@ public class SQLServerDatabase extends AbstractDatabase
         }
     }
     
+    /**
+     * 获得列的数字到名称的映射
+     */
+    private static final Map<Integer , String> typenameMap = new HashMap<Integer , String>();
+    
+    static
+    {
+        // 初始化typenameMap，硬编码即可，因为这个东西是不变的
+        addToMap(34 , "image");
+        addToMap(35 , "text");
+        addToMap(36 , "uniqueidentifier");
+        addToMap(48 , "tinyint");
+        addToMap(52 , "smallint");
+        addToMap(56 , "int");
+        addToMap(58 , "smalldatetime");
+        addToMap(59 , "real");
+        addToMap(60 , "money");
+        addToMap(61 , "datetime");
+        addToMap(62 , "float");
+        addToMap(98 , "sql_variant");
+        addToMap(99 , "ntext");
+        addToMap(104 , "bit");
+        addToMap(106 , "decimal");
+        addToMap(108 , "numeric");
+        addToMap(122 , "smallmoney");
+        addToMap(127 , "bigint");
+        addToMap(165 , "varbinary");
+        addToMap(167 , "varchar");
+        addToMap(173 , "binary");
+        addToMap(175 , "char");
+        addToMap(189 , "timestamp");
+        addToMap(231 , "nvarchar");
+        addToMap(239 , "nchar");
+        addToMap(241 , "xml");
+        addToMap(231 , "sysname");
+    }
+    
+    // 为了好看一点
+    private static void addToMap(Integer key , String value)
+    {
+        typenameMap.put(key , value);
+    }
+    
     // 对象计数器
     private static long count = 1;
     
@@ -189,20 +231,18 @@ public class SQLServerDatabase extends AbstractDatabase
                 // 进行table的初始化
                 try
                 {
-                    String sql = String.format("select * from %s limit 1" , tableName);
+                    String sql = String.format("select name , xtype , length from syscolumns where id = object_id('%s')" , tableName); 
                     result = statement.executeQuery(sql);
-                    ResultSetMetaData meta = result.getMetaData();
-                    
-                    int tot = meta.getColumnCount();
-                    for (int i = 1;i <= tot;i ++)
+                    // 获得一列的信息
+                    while (result.next())
                     {
-                        String columnName = meta.getColumnName(i);
-                        String columnType = meta.getColumnTypeName(i);
-                        int columnSize = meta.getColumnDisplaySize(i);
-                        // 添加一列
-                        table.addColumn(TableColumn.newColumn(columnName , columnType , columnSize));
+                        String columnName = result.getString("name");
+                        int xtype = result.getInt("xtype");
+                        int length = result.getInt("length");
+                        // 列名用大小，为了和其它的保持统一
+                        table.addColumn(TableColumn.newColumn(columnName , typenameMap.get(xtype).toUpperCase() , length));
                     }
-                        
+                    
                 } catch (Exception e)
                 {
                     // 清空所有的
@@ -307,7 +347,7 @@ public class SQLServerDatabase extends AbstractDatabase
     // 获得所有的表的名称
     private Set<String> getTableNames()
     {
-        String sql = String.format("show tables");
+        String sql = String.format("select name from sys.objects where type = 'U'");
         Set<String> ans = new HashSet<String>();
         ResultSet result = null;
         try
@@ -392,16 +432,14 @@ public class SQLServerDatabase extends AbstractDatabase
     private void init(String username , String password , String databasename , String ip , int port) throws Exception
     {
         // 初始化数据库
-        Class.forName("com.mysql.jdbc.Driver");
-        this.conn = DriverManager.getConnection(String.format("jdbc:mysql://%s:%d/%s" , ip , port , databasename) , username , password);
+        Class.forName("com.microsoft.sqlserver.jdbc.SQLServerDriver");
+        this.conn = DriverManager.getConnection(String.format("jdbc:sqlserver://%s:%d;DatabaseName=%s" , ip , port , databasename) , username , password);
         this.statement = this.conn.createStatement();
         // 初始化基本信息
         this.databaseName = databasename;
-        this.databaseType = DATABASE_TYPE.MYSQL;
+        this.databaseType = DATABASE_TYPE.SQLSERVER;
         // 初始化databaseMeta
         this.databaseMeta = new DatabaseMeta(String.format("%s_%d" , this.databaseType.toString() , this.id) , this.databaseType.toString() , "jdbc" , ip , this.databaseName , Integer.toString(port) , username , password);
-        // 切换到该数据库
-        this.statement.execute(String.format("use %s" , databaseName));
         // 更新表信息
         refreshTables();
     }

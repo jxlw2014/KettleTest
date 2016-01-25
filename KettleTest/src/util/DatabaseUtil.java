@@ -90,26 +90,32 @@ public final class DatabaseUtil
     // TODO check the correctness
     public static String getSql(TableColumn column , DATABASE_TYPE databaseType)
     {
-        // 特殊处理一下date
-        if (column.columnType.contains("DATE"))
+        // 如果长度是写死的，后面的column.columnSize就会没有意义，直接写入
+        if (column.columnType.contains("(") || column.columnType.contains(")"))
             return String.format("`%s` %s" , column.columnName , column.columnType);
-        // 特殊处理一下blob
-        else if (column.columnType.contains("BLOB"))
-            return String.format("`%s` %s" , column.columnName , column.columnType);
-        // 特殊处理一下timestamp
-        else if (column.columnType.equals("TIMESTAMP"))
-            return String.format("`%s` %s" , column.columnName , column.columnType);
-        // varchar在mysql里面特别处理一下
-        else if (column.columnType.contains("VARCHAR") && databaseType == DATABASE_TYPE.MYSQL)
+        else
         {
-            if (column.columnSize >= 255)
-                return String.format("`%s` %s" , column.columnName , "TEXT");
+            // 特殊处理一下date
+            if (column.columnType.contains("DATE"))
+                return String.format("`%s` %s" , column.columnName , column.columnType);
+            // 特殊处理一下blob
+            else if (column.columnType.contains("BLOB"))
+                return String.format("`%s` %s" , column.columnName , column.columnType);
+            // 特殊处理一下timestamp
+            else if (column.columnType.equals("TIMESTAMP"))
+                return String.format("`%s` %s" , column.columnName , column.columnType);
+            // varchar在mysql里面特别处理一下
+            else if (column.columnType.contains("VARCHAR") && databaseType == DATABASE_TYPE.MYSQL)
+            {
+                if (column.columnSize >= 255)
+                    return String.format("`%s` %s" , column.columnName , "TEXT");
+                else
+                    return String.format("`%s` %s(%d)" , column.columnName , column.columnType , column.columnSize);
+            }
+            // 其它的就按照基本的格式获取
             else
                 return String.format("`%s` %s(%d)" , column.columnName , column.columnType , column.columnSize);
         }
-        // 其它的就按照基本的格式获取
-        else
-            return String.format("`%s` %s(%d)" , column.columnName , column.columnType , column.columnSize);
     }
 
 }

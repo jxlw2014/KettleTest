@@ -1,9 +1,11 @@
 package main;
 
-import java.sql.Connection;
-import java.sql.DriverManager;
-
-
+import kettle.DataImporter;
+import database.Database;
+import database.MysqlDatabase;
+import database.SQLServerDatabase;
+import env.Constants;
+import env.Environment;
 
 
 
@@ -14,15 +16,14 @@ public class Main
         /**
          * syn test
          */
-        /*
         Environment.init();
         
-        Database sourceDatabase = OracleDatabase.Builder.newBuilder()
-                                    .setDatabasename("orcl")
-                                    .setIp("10.214.208.194")
-                                    .setPassword("datarun")
-                                    .setUsername("datarun")
-                                    .setPort(Constants.DEFAULT_ORACLE_PORT).build();
+        Database sourceDatabase = SQLServerDatabase.Builder.newBuilder()
+                                    .setDatabasename("cgysd")
+                                    .setIp("10.214.224.27")
+                                    .setPassword("123456")
+                                    .setUsername("sa")
+                                    .setPort(Constants.DEFAULT_SQLSERVER_PORT).build();
 
         Database destDatabase = MysqlDatabase.Builder.newBuilder()
                                     .setDatabasename("import")
@@ -31,25 +32,9 @@ public class Main
                                     .setUsername("root")
                                     .setPort(Constants.DEFAULT_MYSQL_PORT).build();
         
-        TimingDataSynchronization syn = TimingDataSynchronization.newInstance();
-        syn.build(sourceDatabase , destDatabase);
-        syn.execute();
-        */
-        
-        /*
-         * test the sqlserver 
-         */
-        try
-        {
-            Class.forName("com.microsoft.sqlserver.jdbc.SQLServerDriver");
-            Connection conn = DriverManager.getConnection("jdbc:sqlserver://10.214.224.27:1433;DatabaseName=cgysd" , "cgysd" , "cgysd"); 
-            System.out.println("conn success...");
-            
-        } catch (Exception e)
-        {
-            e.printStackTrace();
-        }
-        
+        DataImporter importer = DataImporter.newImporter();
+        importer.build(sourceDatabase , destDatabase);
+        importer.execute();
     }
     
 }
