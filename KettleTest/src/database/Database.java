@@ -12,7 +12,7 @@ public interface Database extends KettleDatabase
      */
     public enum DATABASE_TYPE
     {
-        ORACLE("Oracle") , MYSQL("Mysql");
+        ORACLE("Oracle") , MYSQL("Mysql") , SQLSERVER("MSSQL");
      
         private String codename;
         

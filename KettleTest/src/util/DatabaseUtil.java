@@ -65,24 +65,26 @@ public final class DatabaseUtil
      */
     private static String transformColumnType(DATABASE_TYPE source , DATABASE_TYPE dest , String sourceColumnType)
     {
-        // source is oracle
+        // source is ORACLE
         if (source == DATABASE_TYPE.ORACLE)
         {
             if (dest == DATABASE_TYPE.MYSQL)
                 return Environment.ORACLE_TO_MYSQL.get(sourceColumnType);
         }
-        // source is mysql
-        else if (source == DATABASE_TYPE.MYSQL)
+        // source is SQLSERVER
+        else if (source == DATABASE_TYPE.SQLSERVER)
         {
             if (dest == DATABASE_TYPE.ORACLE)
-                return Environment.MYSQL_TO_ORACLE.get(sourceColumnType);
+                return Environment.SQLSERVER_TO_ORACLE.get(sourceColumnType);
+            else if (dest == DATABASE_TYPE.MYSQL)
+                return Environment.SQLSERVER_TO_MYSQL.get(sourceColumnType);
         }
         // 如果不在范围之内
         return null;
     }
     
     /**
-     * 获得给定一列对应的sql字符串，具体是否可行还需要测试。这里的trick主要都是为了从oracle到mysql的兼容，没有任何扩展性，只是针对这些数据库
+     * 获得给定一列对应的sql字符串，具体是否可行还需要测试。没有任何扩展性，只是针对这些数据库
      * @param 一列的信息
      */
     // TODO check the correctness
@@ -97,8 +99,8 @@ public final class DatabaseUtil
         // 特殊处理一下timestamp
         else if (column.columnType.equals("TIMESTAMP"))
             return String.format("`%s` %s" , column.columnName , column.columnType);
-        // 特殊处理一下DateTime
-        else if (column.columnType.contains("VARCHAR"))
+        // varchar在mysql里面特别处理一下
+        else if (column.columnType.contains("VARCHAR") && databaseType == DATABASE_TYPE.MYSQL)
         {
             if (column.columnSize >= 255)
                 return String.format("`%s` %s" , column.columnName , "TEXT");
