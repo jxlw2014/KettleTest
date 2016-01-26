@@ -20,7 +20,11 @@ public abstract class AbstractDatabase implements Database
     /**
      *  数据库的类型
      */
-    protected DATABASE_TYPE databaseType;
+    protected DATABASE_TYPE databaseType;    
+    /**
+     * 用来toString的字符串
+     */
+    protected String stringToShow;
     
     @Override
     public boolean containsTable(String tablename)
@@ -50,6 +54,15 @@ public abstract class AbstractDatabase implements Database
     public DATABASE_TYPE databaseType() 
     {
         return databaseType;
+    }
+    
+    /**
+     * 输出格式为ip:port databasename(databasetype)
+     */
+    @Override
+    public String toString()
+    {
+        return stringToShow;
     }
 
 }

@@ -20,6 +20,8 @@ import database.Table.TableColumn;
  */
 public class KettleUtil 
 {
+    // TODO 两个setting如果能够统一，代码就能简化多了
+    
     /**
      * 导入的参数设定
      */

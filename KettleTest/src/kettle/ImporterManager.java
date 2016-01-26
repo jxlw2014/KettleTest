@@ -11,6 +11,8 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import kettle.DatabaseImporterManager.ImportResult.STATE;
+import util.KettleUtil.ImportSetting;
+import util.KettleUtil.SynchronizationSetting;
 import util.Stopwatch;
 
 import common.Pair;
@@ -98,22 +100,41 @@ public class ImporterManager extends AbstractDatabaseImporterManager
      */
     private final MANAGER_TYPE type;
     
+    // TODO 最好能够为两个setting找到一个父类，以取代这里的Object。这样的实现不太好
+    private Object setting;
+    
     private ImporterManager(MANAGER_TYPE type) 
     {
         this.type = type;
     }
     
     /**
-     * 得到新的manager对象，类型只能设置这一次
+     * 得到新的数据导入的管理对象
+     * @param setting 导入参数设置
      */
-    public static ImporterManager newMananger(MANAGER_TYPE type)
+    public static ImporterManager newDataImporterMananger(ImportSetting setting)
     {
-        return new ImporterManager(type);
+        ImporterManager manager = new ImporterManager(MANAGER_TYPE.IMPORT);
+        manager.setting = setting;
+        return manager; 
+    }
+    
+    /**
+     * 得到新的数据同步的管理对象
+     * @param setting 同步参数设置
+     */
+    public static ImporterManager newDataSynManager(SynchronizationSetting setting)
+    {
+        ImporterManager manager = new ImporterManager(MANAGER_TYPE.SYN);
+        manager.setting = setting;
+        return manager;
     }
 
     @Override
     public List<ImportResult> executeSequential() 
     {
+        System.out.println("Start import sequential...");
+        
         List<ImportResult> results = new ArrayList<ImportResult>();
         int index = 0;
         // 依次处理所有的importer
@@ -131,8 +152,8 @@ public class ImporterManager extends AbstractDatabaseImporterManager
                 if (importer.execute())
                 {
                     ImportResult result = ImportResult.newResult();
-                    result.setSourceDatabasename(pair.first.databaseName())
-                          .setDestDatabasename(pair.second.databaseName())
+                    result.setSourceDatabasename(pair.first.toString())
+                          .setDestDatabasename(pair.second.toString())
                           .setState(STATE.SUCCESS)
                           .setTime(watch.stop());
                     results.add(result);
@@ -148,6 +169,8 @@ public class ImporterManager extends AbstractDatabaseImporterManager
     @Override
     public List<Future<ImportResult>> executeAsync()
     {
+        System.out.println("Start import async...");
+        
         List<Future<ImportResult>> results = new ArrayList<Future<ImportResult>>();
         asyncService = Executors.newCachedThreadPool();
         // 所有的导入类
@@ -156,7 +179,7 @@ public class ImporterManager extends AbstractDatabaseImporterManager
         for (DatabaseImporter importer : this.importers)
         {
             Pair<Database , Database> pair = this.connList.get(index);
-            ImportCallable callable = new ImportCallable(importer , pair.first.databaseName() , pair.second.databaseName());
+            ImportCallable callable = new ImportCallable(importer , pair.first.toString() , pair.second.toString());
             Future<ImportResult> result = asyncService.submit(callable);
             results.add(result);
             index ++;
@@ -233,9 +256,15 @@ public class ImporterManager extends AbstractDatabaseImporterManager
         switch (this.type)
         {
             case IMPORT:
-                return DataImporter.newImporter();
+                DataImporter importer = DataImporter.newImporter();
+                importer.setSetting((ImportSetting) setting);
+                return importer;
+                
             case SYN:
-                return TimingDataSynchronization.newInstance();
+                TimingDataSynchronization syn = TimingDataSynchronization.newInstance();
+                syn.setSetting((SynchronizationSetting) setting);
+                return syn;
+                
             default:
                 return null;
         }

@@ -23,9 +23,9 @@ public class Pair<T1 , T2>
     /**
      * 得到一个新的pair
      */
-    public static <T1 , T2> Pair<T1 , T2> newPair(T1 first , T2 second)
+    public static <V1 , V2> Pair<V1 , V2> newPair(V1 first , V2 second)
     {
-        return new Pair<T1 , T2>(first , second);
+        return new Pair<V1 , V2>(first , second);
     }
     
     @Override
@@ -57,6 +57,15 @@ public class Pair<T1 , T2>
             else
                 return false;
         }
+    }
+
+    /**
+     * (first, second)
+     */
+    @Override
+    public String toString()
+    {
+        return String.format("(%s, %s)" , this.first.toString() , this.second.toString());
     }
     
 }

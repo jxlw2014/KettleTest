@@ -35,10 +35,10 @@ public interface DatabaseImporterManager
         private STATE state;
         // 导入时间
         private double time;
-        // 导入的源数据库名
-        private String sourceDatabasename;
-        // 导入的目的数据库名
-        private String destDatabasename;
+        // 导入的源数据库信息
+        private String sourceDatabase;
+        // 导入的目的数据库信息
+        private String destDatabase;
         
         private ImportResult() { }
         
@@ -62,15 +62,15 @@ public interface DatabaseImporterManager
             return this;
         }
 
-        ImportResult setSourceDatabasename(String sourceDatabasename) 
+        ImportResult setSourceDatabasename(String sourceDatabase) 
         {
-            this.sourceDatabasename = sourceDatabasename;
+            this.sourceDatabase = sourceDatabase;
             return this;
         }
 
-        ImportResult setDestDatabasename(String destDatabasename) 
+        ImportResult setDestDatabasename(String destDatabase) 
         {
-            this.destDatabasename = destDatabasename;
+            this.destDatabase = destDatabase;
             return this;
         }
         
@@ -91,19 +91,43 @@ public interface DatabaseImporterManager
         }
         
         /**
-         * 获得源数据库名
+         * 获得源数据库信息
          */
-        public String sourceDatabasename()
+        public String sourceDatabase()
         {
-            return this.sourceDatabasename;
+            return this.sourceDatabase;
         }
         
         /**
          * 获得目的数据库名
          */
-        public String destDatabasename()
+        public String destDatabase()
         {
-            return this.destDatabasename;
+            return this.destDatabase;
+        }
+        
+        @Override
+        public String toString()
+        {
+            // state , time , sourceDatabase , destDatabase
+            StringBuilder builder = new StringBuilder();
+            builder.append("{");
+            builder.append(String.format("state:%s" , this.state.toString()));
+            // 如果失败了
+            if (this.state == STATE.FAIL)
+                builder.append("}");
+            // 如果成功了，后面的东西都要
+            else
+            {
+                builder.append(", ");
+                builder.append(String.format("time:%f" , this.time));
+                builder.append(", ");
+                builder.append(String.format("source_db:%s" , this.sourceDatabase));
+                builder.append(", ");
+                builder.append(String.format("dest_db:%s" , this.destDatabase));
+                builder.append("}");
+            }
+            return builder.toString();
         }
     }
     

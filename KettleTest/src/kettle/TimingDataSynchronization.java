@@ -50,6 +50,7 @@ public class TimingDataSynchronization implements DatabaseImporter , TimingImpor
     /**
      * 设置同步的参数
      */
+    // TODO 最好能够抽象进入DatabaseImporter
     public void setSetting(SynchronizationSetting setting)
     {
         this.setting = setting;
@@ -69,6 +70,7 @@ public class TimingDataSynchronization implements DatabaseImporter , TimingImpor
     /**
      * 定时执行同步任务
      */
+    @Override
     public void timingExecute(long time , TimeUnit timeUnit)
     {
         // 一个线程就够了，只要管理定时操作就可以了

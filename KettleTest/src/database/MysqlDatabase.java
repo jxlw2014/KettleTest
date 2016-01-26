@@ -396,6 +396,7 @@ public class MysqlDatabase extends AbstractDatabase
         // 初始化基本信息
         this.databaseName = databasename;
         this.databaseType = DATABASE_TYPE.MYSQL;
+        this.stringToShow = String.format("%s:%d %s(%s)" , ip , port , databasename , databaseType.toString());
         // 初始化databaseMeta
         this.databaseMeta = new DatabaseMeta(String.format("%s_%d" , this.databaseType.toString() , this.id) , this.databaseType.toString() , "jdbc" , ip , this.databaseName , Integer.toString(port) , username , password);
         // 切换到该数据库

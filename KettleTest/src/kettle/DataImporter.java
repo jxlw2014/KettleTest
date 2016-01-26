@@ -55,6 +55,7 @@ public class DataImporter implements DatabaseImporter
     /**
      * 设置导入的参数
      */
+    // TODO 最好能够抽象进入DatabaseImporter
     public void setSetting(ImportSetting setting)
     {
         this.setting = setting;
