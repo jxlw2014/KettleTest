@@ -4,22 +4,17 @@ package util;
  * 简单的秒表实现
  */
 public class Stopwatch 
-{
-    private static final class Singleton
-    {
-        public static final Stopwatch instance = new Stopwatch();
-    }
-    
+{   
     private Stopwatch() { }
     
     private long curTime = - 1;
     
     /**
-     * 获得单例对象
+     * 获得新的对象
      */
-    public static Stopwatch getWatch()
+    public synchronized static Stopwatch newWatch()
     {
-        return Singleton.instance;
+        return new Stopwatch();
     }
     
     /**

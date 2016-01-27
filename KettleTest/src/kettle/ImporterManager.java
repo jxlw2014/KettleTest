@@ -48,7 +48,7 @@ public class ImporterManager extends AbstractDatabaseImporterManager
                 return ImportResult.FAIL;
             else
             {
-                Stopwatch watch = Stopwatch.getWatch();
+                Stopwatch watch = Stopwatch.newWatch();
                 watch.start();
                 // 如果导入失败
                 if (!importer.execute())
@@ -147,7 +147,7 @@ public class ImporterManager extends AbstractDatabaseImporterManager
             {
                 Pair<Database , Database> pair = this.connList.get(index);
                 // 获得result中的时间
-                Stopwatch watch = Stopwatch.getWatch();
+                Stopwatch watch = Stopwatch.newWatch();
                 watch.start();
                 if (importer.execute())
                 {

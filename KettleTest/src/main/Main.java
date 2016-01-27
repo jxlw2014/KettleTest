@@ -68,6 +68,9 @@ public class Main
                 System.out.println(result.get());
             } catch (Exception e) { }
         }
+        
+        // 结果都有了，肯定可以结束了
+        manager.shutdown();
     }
     
 }
