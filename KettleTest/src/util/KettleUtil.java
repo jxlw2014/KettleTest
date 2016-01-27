@@ -3,9 +3,13 @@ package util;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.pentaho.di.core.Condition;
+import org.pentaho.di.core.exception.KettleValueException;
+import org.pentaho.di.core.row.ValueMetaAndData;
 import org.pentaho.di.trans.TransHopMeta;
 import org.pentaho.di.trans.TransMeta;
 import org.pentaho.di.trans.step.StepMeta;
+import org.pentaho.di.trans.steps.filterrows.FilterRowsMeta;
 import org.pentaho.di.trans.steps.mergerows.MergeRowsMeta;
 import org.pentaho.di.trans.steps.synchronizeaftermerge.SynchronizeAfterMergeMeta;
 import org.pentaho.di.trans.steps.tableinput.TableInputMeta;
@@ -195,6 +199,8 @@ public class KettleUtil
      * @param setting   同步参数设置
      * @param index     同步序号
      */
+    
+    // TODO check the modify in syn
     public static void addSynchronizedComponent(TransMeta transMeta , Database source , Table sourceTable ,
                                                 Database dest , Table destTable , SynchronizationSetting setting , int index)
     {
@@ -208,6 +214,8 @@ public class KettleUtil
         List<String> list = new ArrayList<String>();
         for (TableColumn column : sourceTable.getColumnList())
             list.add(column.columnName);
+        // 关键字列一般就是第一列
+        String keyfield = list.get(0);
             
         String[] names = new String[list.size()];
         for (int i = 0;i < list.size();i ++)
@@ -225,14 +233,14 @@ public class KettleUtil
         // input tables
         TableInputMeta inputMeta1 = new TableInputMeta();
         inputMeta1.setDatabaseMeta(source.databaseMeta());
-        inputMeta1.setSQL(String.format("select * from %s" , sourceTable.getTableName()));
+        inputMeta1.setSQL(String.format("select * from %s order by %s" , sourceTable.getTableName() , keyfield));
         
         StepMeta inputStepMeta1 = new StepMeta(String.format("input1_%s" , sourceTable.getTableName()) , inputMeta1);
         transMeta.addStep(inputStepMeta1);
         
         TableInputMeta inputMeta2 = new TableInputMeta();
         inputMeta2.setDatabaseMeta(dest.databaseMeta());
-        inputMeta2.setSQL(String.format("select * from %s" , destTable.getTableName()));
+        inputMeta2.setSQL(String.format("select * from %s order by %s" , destTable.getTableName() , keyfield));
         
         StepMeta inputStepMeta2 = new StepMeta(String.format("input2_%s" , destTable.getTableName()) , inputMeta2);
         transMeta.addStep(inputStepMeta2);
@@ -240,7 +248,7 @@ public class KettleUtil
         // merge
         MergeRowsMeta rowsMeta = new MergeRowsMeta();
         rowsMeta.setFlagField("flagfield");
-        rowsMeta.setKeyFields(names);
+        rowsMeta.setKeyFields(new String[] {keyfield});
         rowsMeta.setValueFields(names);
         
         // 设置旧的和新的
@@ -252,15 +260,35 @@ public class KettleUtil
         transMeta.addTransHop(new TransHopMeta(inputStepMeta1 , merge));
         transMeta.addTransHop(new TransHopMeta(inputStepMeta2 , merge));
         
+        // 判断filter是否添加成功
+        boolean addFilterSuccess = true;
+        // filter
+        FilterRowsMeta filterMeta = new FilterRowsMeta();
+        StepMeta filter = null;
+        try
+        {
+            filterMeta.setCondition(new Condition("flagfield" , Condition.FUNC_NOT_EQUAL , null , new ValueMetaAndData("flag" , "identical")));
+            filter = new StepMeta(String.format("filter_%s" , sourceTable.getTableName()) , filterMeta);
+            transMeta.addStep(filter);
+            transMeta.addTransHop(new TransHopMeta(merge , filter));
+            // 添加成功
+            addFilterSuccess = true;
+            
+        } catch (KettleValueException e)
+        {
+            addFilterSuccess = false;
+            System.out.println("add filter component fail, due to the filter value is not legal...");
+        }
+        
         // Syn
         SynchronizeAfterMergeMeta synMeta = new SynchronizeAfterMergeMeta();
         synMeta.setDatabaseMeta(dest.databaseMeta());
         synMeta.setTableName(destTable.getTableName());
         
-        synMeta.setKeyStream(names);
-        synMeta.setKeyLookup(names);
-        synMeta.setKeyCondition(conditions);
-        synMeta.setKeyStream2(emptyStrings);
+        synMeta.setKeyStream(new String[] {keyfield});
+        synMeta.setKeyLookup(new String[] {keyfield});
+        synMeta.setKeyCondition(new String[] {"="});
+        synMeta.setKeyStream2(new String[] {""});
         
         synMeta.setUpdateLookup(names);
         synMeta.setUpdateStream(names);
@@ -277,7 +305,11 @@ public class KettleUtil
         StepMeta syn = new StepMeta(String.format("syn_%s" , sourceTable.getTableName()) , synMeta);
         transMeta.addStep(syn);
         
-        transMeta.addTransHop(new TransHopMeta(merge , syn));
+        // 如果filter没有加成功，直接交给syn
+        if (!addFilterSuccess)
+            transMeta.addTransHop(new TransHopMeta(merge , syn));
+        else
+            transMeta.addTransHop(new TransHopMeta(filter , syn));
         
         System.out.println("add syn component to table " + sourceTable.getTableName());
     }

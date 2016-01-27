@@ -5,12 +5,10 @@ import java.util.concurrent.Future;
 
 import kettle.DatabaseImporterManager.ImportResult;
 import kettle.ImporterManager;
-import util.KettleUtil.ImportSetting;
+import util.KettleUtil.SynchronizationSetting;
 import util.Pairs;
 import database.Database;
 import database.MysqlDatabase;
-import database.OracleDatabase;
-import database.SQLServerDatabase;
 import env.Constants;
 import env.Environment;
 
@@ -25,40 +23,40 @@ public class Main
          */
         Environment.init();
 
-        // sqlserver
-        Database sourceDatabase1 = SQLServerDatabase.Builder.newBuilder()
-                                    .setDatabasename("cgysd")
-                                    .setIp("10.214.224.27")
-                                    .setPassword("123456")
-                                    .setUsername("sa")
-                                    .setPort(Constants.DEFAULT_SQLSERVER_PORT).build();
-
-        // oracle
-        Database sourceDatabase2 = OracleDatabase.Builder.newBuilder()
-                                    .setDatabasename("orcl")
-                                    .setIp("10.214.208.194")
-                                    .setUsername("datarun")
-                                    .setPassword("datarun")
-                                    .setPort(Constants.DEFAULT_ORACLE_PORT).build();
-        
-        // mysql
-        Database destDatabase1 = MysqlDatabase.Builder.newBuilder()
+        // mysql source1
+        Database sourceDatabase1 = MysqlDatabase.Builder.newBuilder()
                                     .setDatabasename("import_sqlserver")
                                     .setIp("localhost")
                                     .setPassword("liuwei")
                                     .setUsername("root")
                                     .setPort(Constants.DEFAULT_MYSQL_PORT).build();
-        
-        // mysql
-        Database destDatabase2 = MysqlDatabase.Builder.newBuilder()
+
+        // mysql source2
+        Database sourceDatabase2 = MysqlDatabase.Builder.newBuilder()
                                     .setDatabasename("import_oracle")
+                                    .setIp("localhost")
+                                    .setUsername("root")
+                                    .setPassword("liuwei")
+                                    .setPort(Constants.DEFAULT_MYSQL_PORT).build();
+        
+        // mysql dest1
+        Database destDatabase1 = MysqlDatabase.Builder.newBuilder()
+                                    .setDatabasename("import1")
                                     .setIp("localhost")
                                     .setPassword("liuwei")
                                     .setUsername("root")
                                     .setPort(Constants.DEFAULT_MYSQL_PORT).build();
         
-        // 测试多个导入操作同时进行
-        ImporterManager manager = ImporterManager.newDataImporterMananger(ImportSetting.DEFAULT);
+        // mysql dest2
+        Database destDatabase2 = MysqlDatabase.Builder.newBuilder()
+                                    .setDatabasename("import2")
+                                    .setIp("localhost")
+                                    .setPassword("liuwei")
+                                    .setUsername("root")
+                                    .setPort(Constants.DEFAULT_MYSQL_PORT).build();
+        
+        // 测试多个同步操作同时进行
+        ImporterManager manager = ImporterManager.newDataSynManager(SynchronizationSetting.DEFAULT);
 
         manager.build(Pairs.toPairs(sourceDatabase1 , destDatabase1 , sourceDatabase2 , destDatabase2));
         

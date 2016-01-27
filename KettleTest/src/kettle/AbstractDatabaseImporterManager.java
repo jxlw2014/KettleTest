@@ -24,6 +24,9 @@ public abstract class AbstractDatabaseImporterManager implements DatabaseImporte
      */
     protected List<DatabaseImporter> importers = new ArrayList<DatabaseImporter>();
     
+    /**
+     * build采用的策略是对每个连接对进行顺序处理，并不是并发处理
+     */
     @Override
     public void build(Iterable<Pair<Database, Database>> pairs) 
     {
@@ -32,6 +35,9 @@ public abstract class AbstractDatabaseImporterManager implements DatabaseImporte
         buildImporters();
     }
 
+    /**
+     * build采用的策略是对每个连接对进行顺序处理，并不是并发处理
+     */
     @Override
     public void build(Pair<Database, Database>... pairs) 
     {
@@ -77,7 +83,7 @@ public abstract class AbstractDatabaseImporterManager implements DatabaseImporte
     }
     
     /**
-     * 构造importers
+     * 对每个连接pair构造importer对象
      */
     protected abstract void buildImporters();
     

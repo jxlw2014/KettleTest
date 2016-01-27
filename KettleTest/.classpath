@@ -133,7 +133,7 @@
 	<classpathentry kind="lib" path="E:/data-integration/lib/kettle5-log4j-plugin-6.0.0.0-353.jar"/>
 	<classpathentry kind="lib" path="E:/data-integration/lib/kettle-core-6.0.0.0-353.jar" sourcepath="E:/pentaho-kettle-master.zip"/>
 	<classpathentry kind="lib" path="E:/data-integration/lib/kettle-dbdialog-6.0.0.0-353.jar"/>
-	<classpathentry kind="lib" path="E:/data-integration/lib/kettle-engine-6.0.0.0-353.jar"/>
+	<classpathentry kind="lib" path="E:/data-integration/lib/kettle-engine-6.0.0.0-353.jar" sourcepath="E:/pentaho-kettle-master.zip"/>
 	<classpathentry kind="lib" path="E:/data-integration/lib/kettle-ui-swt-6.0.0.0-353.jar"/>
 	<classpathentry kind="lib" path="E:/data-integration/lib/ldapjdk-20000524.jar"/>
 	<classpathentry kind="lib" path="E:/data-integration/lib/libbase-6.0.0.0-353.jar"/>
