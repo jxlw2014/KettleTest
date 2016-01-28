@@ -5,7 +5,7 @@ import java.util.concurrent.Future;
 
 import kettle.DatabaseImporterManager.ImportResult;
 import kettle.ImporterManager;
-import util.KettleUtil.SynchronizationSetting;
+import util.KettleUtil.DatabaseImporterSetting;
 import util.Pairs;
 import database.Database;
 import database.MysqlDatabase;
@@ -56,9 +56,9 @@ public class Main
                                     .setPort(Constants.DEFAULT_MYSQL_PORT).build();
         
         // 测试多个同步操作同时进行
-        ImporterManager manager = ImporterManager.newDataSynManager(SynchronizationSetting.DEFAULT);
+        ImporterManager manager = ImporterManager.newDataImportManager(DatabaseImporterSetting.DEFAULT);
 
-        manager.build(Pairs.toPairs(sourceDatabase1 , destDatabase1 , sourceDatabase2 , destDatabase2));
+        manager.buildByConnPairs(Pairs.toPairs(sourceDatabase1 , destDatabase1 , sourceDatabase2 , destDatabase2));
         
         List<Future<ImportResult>> results = manager.executeAsync();
         for (Future<ImportResult> result : results)

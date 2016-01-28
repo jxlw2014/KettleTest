@@ -76,6 +76,14 @@ public final class Pairs
     }
     
     /**
+     * 获得一个pair对应的Iterable
+     */
+    public static <T1 , T2> Iterable<Pair<T1 , T2>> toPair(T1 e1 , T2 e2)
+    {
+        return new SimpleIterable<T1, T2>(1).addPair(e1 , e2);
+    }
+    
+    /**
      * 获得pairs对应的的Iterable
      */
     public static <T1 , T2> Iterable<Pair<T1 , T2>> toPairs(T1 e1 , T2 e2 , T1 e3 , T2 e4)

@@ -81,8 +81,10 @@ public interface Database extends KettleDatabase
      */
     public boolean createTable(Table table);
     
-//    TODO 不确定有没有需要 
-//    public boolean dropTable(String tableName);
+    /**
+     * 删除一个表
+     */
+    public boolean dropTable(String tableName);
     
     /**
      * 批量创建表

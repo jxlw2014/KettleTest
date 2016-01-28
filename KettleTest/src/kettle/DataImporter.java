@@ -1,20 +1,27 @@
 package kettle;
 
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import org.pentaho.di.trans.Trans;
 import org.pentaho.di.trans.TransMeta;
 
 import util.DatabaseUtil;
 import util.KettleUtil;
-import util.KettleUtil.ImportSetting;
+import util.KettleUtil.DatabaseImporterSetting;
+
+import common.Pair;
+
 import database.Database;
 import database.Table;
 import env.Constants;
 
 /**
- * 数据导入类，实现将一个数据库中的所有表数据导入到另一个数据库中的功能，底层使用kettle核心类实现
+ * 数据导入类，实现将一个数据库中的所有表数据导入到另一个数据库中的功能。采用的导入策略是：首先复制表的结构，如果目的数据库中
+ * 有同名表，就进行重建。然后进行数据的导入
  */
 public class DataImporter implements DatabaseImporter 
 {
@@ -37,10 +44,14 @@ public class DataImporter implements DatabaseImporter
     private STATE state = STATE.NEW;
     
     // 导入设置
-    private ImportSetting setting = ImportSetting.DEFAULT;
+    private DatabaseImporterSetting setting = DatabaseImporterSetting.DEFAULT;
     
     // 判断是否shutdown
     private AtomicBoolean isShutdown = new AtomicBoolean(false);
+    
+    // 条件table，作为导入时的前提条件
+    private AtomicInteger setFlag = new AtomicInteger(0);
+    private Set<String> tables;
     
     private DataImporter() { }
     
@@ -52,13 +63,36 @@ public class DataImporter implements DatabaseImporter
         return new DataImporter();
     }
     
-    /**
-     * 设置导入的参数
-     */
-    // TODO 最好能够抽象进入DatabaseImporter
-    public void setSetting(ImportSetting setting)
+    @Override
+    public void setSetting(DatabaseImporterSetting setting)
     {
         this.setting = setting;
+    }
+    
+    @Override
+    public void setIncludedTables(Iterable<String> tables) 
+    {
+        // 如果没有进行过设置
+        if (this.setFlag.get() == 0)
+        {
+            this.setFlag.decrementAndGet();
+            this.tables = new HashSet<String>();
+            for (String table : tables)
+                this.tables.add(table.toUpperCase());
+        }
+    }
+
+    @Override
+    public void setExcludedTables(Iterable<String> tables) 
+    {
+        // 如果没有进行过设置
+        if (this.setFlag.get() == 0)
+        {
+            this.setFlag.incrementAndGet();
+            this.tables = new HashSet<String>();
+            for (String table : tables)
+                this.tables.add(table.toUpperCase());
+        }
     }
     
     @Override
@@ -95,6 +129,16 @@ public class DataImporter implements DatabaseImporter
     }   
     
     @Override
+    public Pair<Database , Database> getConnPair()
+    {
+        // 如果没有成功build
+        if (this.source == null || this.dest == null)
+            return null;
+        else
+            return Pair.newPair(this.source , this.dest);
+    }
+    
+    @Override
     public boolean execute()
     {
         // 如果已经BUILD了
@@ -122,10 +166,14 @@ public class DataImporter implements DatabaseImporter
                     while (cur < tableList.size() && cnt <= batchSize)
                     {
                         Table sourceTable = tableList.get(cur);
-                        Table destTable = DatabaseUtil.transformTable(source.databaseType() , dest.databaseType() , sourceTable);
-                        KettleUtil.addImportComponent(transMeta , source , sourceTable , dest , destTable , this.setting , cnt);
+                        // 如果需要进行导入
+                        if (check(sourceTable))
+                        {
+                            Table destTable = DatabaseUtil.transformTable(source.databaseType() , dest.databaseType() , sourceTable);
+                            KettleUtil.addImportComponent(transMeta , source , sourceTable , dest , destTable , this.setting , cnt);
+                            cnt ++;
+                        }
                         cur ++;
-                        cnt ++;
                     }
                     
                     trans = new Trans(transMeta);
@@ -170,6 +218,25 @@ public class DataImporter implements DatabaseImporter
     public void shutdown()
     {
         this.isShutdown.set(true);
+    }
+    
+    /**
+     * 判断表是否需要导入
+     */
+    private boolean check(Table table)
+    {
+        // 如果没有进行设置
+        if (this.setFlag.get() == 0)
+            return true;
+        else
+        {
+            if (this.setFlag.get() < 0 && this.tables.contains(table.getTableName()))
+                return true;
+            else if (this.setFlag.get() > 0 && !this.tables.contains(table.getTableName()))
+                return true;
+            else
+                return false;
+        }
     }
 
 }

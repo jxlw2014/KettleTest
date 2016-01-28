@@ -290,6 +290,29 @@ public class OracleDatabase extends AbstractDatabase
         }
         return true;
     }
+    
+    /**
+     * 删除一个表
+     */
+    public boolean dropTable(String tableName)
+    {
+        // 如果表存在
+        if (containsTable(tableName))
+        {
+            String sql = String.format("drop table %s purge" , tableName);
+            try
+            {
+                this.statement.execute(sql);
+            } catch (Exception e)
+            {
+                // 如果执行出现异常
+                return false;
+            }
+            return true;
+        }
+        else
+            return false;
+    }
 
     @Override
     public void disconnect() 

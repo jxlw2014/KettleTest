@@ -28,8 +28,11 @@ public abstract class AbstractDatabaseImporterManager implements DatabaseImporte
      * build采用的策略是对每个连接对进行顺序处理，并不是并发处理
      */
     @Override
-    public void build(Iterable<Pair<Database, Database>> pairs) 
+    public void buildByConnPairs(Iterable<Pair<Database, Database>> pairs) 
     {
+        this.connList.clear();
+        this.importers.clear();
+        
         for (Pair<Database , Database> pair : pairs)
             connList.add(pair);
         buildImporters();
@@ -39,16 +42,22 @@ public abstract class AbstractDatabaseImporterManager implements DatabaseImporte
      * build采用的策略是对每个连接对进行顺序处理，并不是并发处理
      */
     @Override
-    public void build(Pair<Database, Database>... pairs) 
+    public void buildByConnPairs(Pair<Database, Database>... pairs) 
     {
+        this.connList.clear();
+        this.importers.clear();
+        
         for (Pair<Database , Database> pair : pairs)
             connList.add(pair);
         buildImporters();
     } 
-
+    
     @Override
     public boolean execute(boolean isAsync)
     {
+        // 执行前初始化
+        initBeforeExecute();
+        
         // 如果是异步
         if (isAsync)
         {
@@ -81,6 +90,11 @@ public abstract class AbstractDatabaseImporterManager implements DatabaseImporte
             return true;
         }
     }
+    
+    /**
+     * 执行之前的初始化
+     */
+    protected abstract void initBeforeExecute();
     
     /**
      * 对每个连接pair构造importer对象

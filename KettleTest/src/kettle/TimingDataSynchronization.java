@@ -1,17 +1,23 @@
 package kettle;
 
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import org.pentaho.di.trans.Trans;
 import org.pentaho.di.trans.TransMeta;
 
 import util.DatabaseUtil;
 import util.KettleUtil;
-import util.KettleUtil.SynchronizationSetting;
+import util.KettleUtil.DatabaseImporterSetting;
+
+import common.Pair;
+
 import database.Database;
 import database.Table;
 import env.Constants;
@@ -39,7 +45,7 @@ public class TimingDataSynchronization implements DatabaseImporter , TimingImpor
     private Database dest;
     
     // 同步参数的设置
-    private SynchronizationSetting setting = SynchronizationSetting.DEFAULT;
+    private DatabaseImporterSetting setting = DatabaseImporterSetting.DEFAULT;
     
     // 支持定时操作的线程池
     private ScheduledExecutorService executor; 
@@ -47,13 +53,38 @@ public class TimingDataSynchronization implements DatabaseImporter , TimingImpor
     // 是否停止的标志
     private AtomicBoolean isShutdown = new AtomicBoolean(false);
     
-    /**
-     * 设置同步的参数
-     */
-    // TODO 最好能够抽象进入DatabaseImporter
-    public void setSetting(SynchronizationSetting setting)
+    // 设置表相关的信息
+    private AtomicInteger setFlag = new AtomicInteger(0);
+    private Set<String> tables;
+    
+    @Override
+    public void setSetting(DatabaseImporterSetting setting)
     {
         this.setting = setting;
+    }
+
+    @Override
+    public void setIncludedTables(Iterable<String> tables) 
+    {  
+        if (this.setFlag.get() == 0)
+        {
+            this.setFlag.decrementAndGet();
+            this.tables = new HashSet<String>();
+            for (String str : tables)
+                this.tables.add(str.toUpperCase());
+        }
+    }
+
+    @Override
+    public void setExcludedTables(Iterable<String> tables) 
+    {
+        if (this.setFlag.get() == 0)
+        {
+            this.setFlag.incrementAndGet();
+            this.tables = new HashSet<String>();
+            for (String str : tables)
+                this.tables.add(str.toUpperCase());
+        }
     }
 
     @Override
@@ -65,6 +96,16 @@ public class TimingDataSynchronization implements DatabaseImporter , TimingImpor
         this.isShutdown.set(false);
         // 就是返回true，没什么可以判断的
         return true;
+    }
+    
+    @Override
+    public Pair<Database , Database> getConnPair()
+    {
+        // 如果没有成功build
+        if (this.source == null || this.dest == null)
+            return null;
+        else
+            return Pair.newPair(this.source , this.dest);
     }
 
     /**
@@ -106,18 +147,21 @@ public class TimingDataSynchronization implements DatabaseImporter , TimingImpor
                 while (cur < n && cnt <= batchSize)
                 {
                     Table sourceTable = tableList.get(cur);
-                    Table destTable = DatabaseUtil.transformTable(source.databaseType() , dest.databaseType() , sourceTable);
-                    
-                    // 存在没有destTable的可能，因为没有执行一遍copySchema。所以需要判断一下
-                    if (!dest.containsTable(destTable.getTableName()))
+                    // 如果表可以
+                    if (check(sourceTable))
                     {
-                        dest.createTable(destTable);
-                        System.out.println(String.format("Create table %s due to the table is not exists in dest database..." , sourceTable.getTableName()));
-                    }
-                    KettleUtil.addSynchronizedComponent(transMeta , source , sourceTable , dest , destTable , setting , cnt);
+                        Table destTable = DatabaseUtil.transformTable(source.databaseType() , dest.databaseType() , sourceTable);
                         
+                        // 存在没有destTable的可能，因为没有执行一遍copySchema。所以需要判断一下
+                        if (!dest.containsTable(destTable.getTableName()))
+                        {
+                            dest.createTable(destTable);
+                            System.out.println(String.format("Create table %s due to the table is not exists in dest database..." , sourceTable.getTableName()));
+                        }
+                        KettleUtil.addSynchronizedComponent(transMeta , source , sourceTable , dest , destTable , setting , cnt);
+                        cnt ++;
+                    }
                     cur ++;
-                    cnt ++;
                 }
                
                 // execute in batch
@@ -125,6 +169,9 @@ public class TimingDataSynchronization implements DatabaseImporter , TimingImpor
                 trans.prepareExecution(null);
                 trans.startThreads();
                 trans.waitUntilFinished();
+                
+                transMeta = null;
+                trans = null;
                 
                 System.out.println(String.format("Syn %d table success..." , cur));
             }
@@ -155,6 +202,24 @@ public class TimingDataSynchronization implements DatabaseImporter , TimingImpor
         if (executor != null)
             executor.shutdown();
         isShutdown.set(true);
+    }
+    
+    /**
+     * 判断一个表是不是应该进行同步
+     */
+    private boolean check(Table table)
+    {
+        if (this.setFlag.get() == 0)
+            return true;
+        else
+        {
+            if (this.setFlag.get() < 0 && this.tables.contains(table.getTableName()))
+                return true;
+            else if (this.setFlag.get() > 0 && !this.tables.contains(table.getTableName()))
+                return true;
+            else
+                return false;
+        }
     }
     
 }

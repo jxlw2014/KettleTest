@@ -1,7 +1,9 @@
 package kettle;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -9,10 +11,10 @@ import java.util.concurrent.Future;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import kettle.DatabaseImporterManager.ImportResult.STATE;
-import util.KettleUtil.ImportSetting;
-import util.KettleUtil.SynchronizationSetting;
+import util.KettleUtil.DatabaseImporterSetting;
 import util.Stopwatch;
 
 import common.Pair;
@@ -98,10 +100,18 @@ public class ImporterManager extends AbstractDatabaseImporterManager
     /**
      * 管理类的类型
      */
+    // TODO 是统一为一个类好还是分成两个导入管理类
     private final MANAGER_TYPE type;
     
-    // TODO 最好能够为两个setting找到一个父类，以取代这里的Object。这样的实现不太好
-    private Object setting;
+    /**
+     * 数据库导入的设置对象
+     */
+    private DatabaseImporterSetting setting;
+    
+    // 进行具体处理的表
+    private Set<String> tables;
+    // -1表示设置了included，1表示设置了excluded，0表示没有进行设置
+    private AtomicInteger setFlag = new AtomicInteger(0);
     
     private ImporterManager(MANAGER_TYPE type) 
     {
@@ -112,27 +122,90 @@ public class ImporterManager extends AbstractDatabaseImporterManager
      * 得到新的数据导入的管理对象
      * @param setting 导入参数设置
      */
-    public static ImporterManager newDataImporterMananger(ImportSetting setting)
+    public static ImporterManager newDataImportManager(DatabaseImporterSetting setting)
     {
         ImporterManager manager = new ImporterManager(MANAGER_TYPE.IMPORT);
         manager.setting = setting;
-        return manager; 
+        return manager;
     }
     
     /**
      * 得到新的数据同步的管理对象
      * @param setting 同步参数设置
      */
-    public static ImporterManager newDataSynManager(SynchronizationSetting setting)
+    public static ImporterManager newDataSynManager(DatabaseImporterSetting setting)
     {
         ImporterManager manager = new ImporterManager(MANAGER_TYPE.SYN);
         manager.setting = setting;
         return manager;
     }
+    
+    @Override
+    public void setIncludedTables(Iterable<String> tables)
+    {   
+        if (setFlag.get() == 0)
+        {
+            setFlag.decrementAndGet();
+            this.tables = new HashSet<String>();
+            for (String str : tables)
+                this.tables.add(str.toUpperCase());
+        }
+    }
+    
+    @Override
+    public void setExcluedTables(Iterable<String> tables)
+    {
+        if (setFlag.get() == 0)
+        {
+            setFlag.incrementAndGet();
+            this.tables = new HashSet<String>();
+            for (String str : tables)
+                this.tables.add(str.toUpperCase());
+        }
+    }
+    
+    @Override
+    public void buildByImporters(Iterable<DatabaseImporter> importers)
+    {
+        this.connList.clear();
+        this.importers.clear();
+        
+        // 判断所有的数据库导入对象
+        for (DatabaseImporter importer : importers)
+        {
+            // 如果是合法的导入对象
+            if (importer != null)
+            {
+                Pair<Database , Database> conn = importer.getConnPair();
+                // 如果导入已经成功build了
+                if (conn != null)
+                {
+                    // 判断管理类的类型
+                    switch (this.type)
+                    {
+                        case IMPORT:
+                            // 检查类型
+                            if (importer instanceof DataImporter)
+                                this.connList.add(conn);
+                                this.importers.add(importer);
+                                
+                        case SYN:
+                            // 检查类型
+                            if (importer instanceof TimingDataSynchronization)
+                                this.connList.add(conn);
+                                this.importers.add(importer);
+                    }
+                }
+            }
+        }
+    }
 
     @Override
     public List<ImportResult> executeSequential() 
     {
+        // 执行之前的初始化操作
+        initBeforeExecute();
+        
         System.out.println("Start import sequential...");
         
         List<ImportResult> results = new ArrayList<ImportResult>();
@@ -169,6 +242,9 @@ public class ImporterManager extends AbstractDatabaseImporterManager
     @Override
     public List<Future<ImportResult>> executeAsync()
     {
+        // 执行之前的初始化操作
+        initBeforeExecute();
+        
         System.out.println("Start import async...");
         
         List<Future<ImportResult>> results = new ArrayList<Future<ImportResult>>();
@@ -190,6 +266,9 @@ public class ImporterManager extends AbstractDatabaseImporterManager
     @Override
     public void timingExecute(long time, TimeUnit unit) 
     {
+        // 执行之前的初始化操作
+        initBeforeExecute();
+        
         // 如果是第一次执行
         if (!timingIsStart.get())
         {   
@@ -248,6 +327,25 @@ public class ImporterManager extends AbstractDatabaseImporterManager
     }
     
     /**
+     * 执行之前的操作
+     */
+    @Override
+    protected void initBeforeExecute()
+    {
+        if (setFlag.get() != 0)
+        {
+            // init the importers，according to the value of setFlag
+            for (DatabaseImporter importer : this.importers)
+            {
+                if (setFlag.get() < 0)
+                    importer.setIncludedTables(this.tables);
+                else
+                    importer.setExcludedTables(this.tables);
+            }
+        }
+    }
+    
+    /**
      * 根据ManagerType获得对应的importer
      */
     private DatabaseImporter getImporter()
@@ -257,12 +355,12 @@ public class ImporterManager extends AbstractDatabaseImporterManager
         {
             case IMPORT:
                 DataImporter importer = DataImporter.newImporter();
-                importer.setSetting((ImportSetting) setting);
+                importer.setSetting(setting);
                 return importer;
                 
             case SYN:
                 TimingDataSynchronization syn = TimingDataSynchronization.newInstance();
-                syn.setSetting((SynchronizationSetting) setting);
+                syn.setSetting(setting);
                 return syn;
                 
             default:

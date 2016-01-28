@@ -3,13 +3,9 @@ package util;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.pentaho.di.core.Condition;
-import org.pentaho.di.core.exception.KettleValueException;
-import org.pentaho.di.core.row.ValueMetaAndData;
 import org.pentaho.di.trans.TransHopMeta;
 import org.pentaho.di.trans.TransMeta;
 import org.pentaho.di.trans.step.StepMeta;
-import org.pentaho.di.trans.steps.filterrows.FilterRowsMeta;
 import org.pentaho.di.trans.steps.mergerows.MergeRowsMeta;
 import org.pentaho.di.trans.steps.synchronizeaftermerge.SynchronizeAfterMergeMeta;
 import org.pentaho.di.trans.steps.tableinput.TableInputMeta;
@@ -22,14 +18,12 @@ import database.Table.TableColumn;
 /**
  * kettle相关处理的工具类
  */
-public class KettleUtil 
+public final class KettleUtil 
 {
-    // TODO 两个setting如果能够统一，代码就能简化多了
-    
     /**
-     * 导入的参数设定
+     * 库对库导入工具的参数设定，用来设置一个库中所有表import时的参数
      */
-    public static class ImportSetting
+    public static class DatabaseImporterSetting
     {
         // 是否工作在batch提交下
         private boolean inBatch = true;
@@ -39,22 +33,22 @@ public class KettleUtil
         /**
          * 默认的同步参数设置
          */
-        public static final ImportSetting DEFAULT = new ImportSetting().setInBatch(true).setCommitSize(1000);
+        public static final DatabaseImporterSetting DEFAULT = new DatabaseImporterSetting().setInBatch(true).setCommitSize(1000);
         
-        private ImportSetting() { }
+        private DatabaseImporterSetting() { }
         
         /**
          * 获得一个新的setting对象
          */
-        public static ImportSetting newSetting()
+        public static DatabaseImporterSetting newSetting()
         {
-            return new ImportSetting();
+            return new DatabaseImporterSetting();
         }
         
         /**
          * 设置是否采用batch的方式插入
          */
-        public ImportSetting setInBatch(boolean inBatch)
+        public DatabaseImporterSetting setInBatch(boolean inBatch)
         {
             this.inBatch = inBatch;
             return this;
@@ -63,50 +57,9 @@ public class KettleUtil
         /**
          * 设置提交的记录数目
          */
-        public ImportSetting setCommitSize(int commitSize)
+        public DatabaseImporterSetting setCommitSize(int commitSize)
         {
             this.commitSize = commitSize;
-            return this;
-        }
-    }
-    
-    /**
-     * 同步的参数设置
-     */
-    public static class SynchronizationSetting
-    {
-        // 提交记录的数目和是否采用batch的方式提交
-        private int commitSize;
-        private boolean inBatch;
-        
-        private SynchronizationSetting() { }
-        
-        public static SynchronizationSetting newSetting()
-        {
-            return new SynchronizationSetting();
-        }
-       
-        /**
-         *  默认的同步参数
-         */
-        public static final SynchronizationSetting DEFAULT = new SynchronizationSetting()
-                                                                    .setCommitSize(1000).setInBatch(true);
-        
-        /**
-         * 设置提交的记录数目
-         */
-        public SynchronizationSetting setCommitSize(int commitSize)
-        {
-            this.commitSize = commitSize;
-            return this;
-        }
-        
-        /**
-         * 设置是否工作在batch的状态下
-         */
-        public SynchronizationSetting setInBatch(boolean inBatch)
-        {
-            this.inBatch = inBatch;
             return this;
         }
     }
@@ -119,7 +72,7 @@ public class KettleUtil
      * @param source    源数据库
      * @param dest      目标数据库
      */
-    public static void addImportComponent(TransMeta transMeta , Database source , Database dest , ImportSetting setting)
+    public static void addImportComponent(TransMeta transMeta , Database source , Database dest , DatabaseImporterSetting setting)
     {
         // 操作的标号
         int next = 1;
@@ -142,7 +95,7 @@ public class KettleUtil
      * @param index 操作的序号，用来区分不同的导入组件
      */
     public static void addImportComponent(TransMeta transMeta , Database sourceDatabase , Table sourceTable , 
-                                                                     Database destDatabase , Table destTable , ImportSetting setting , int index)
+                                                                     Database destDatabase , Table destTable , DatabaseImporterSetting setting , int index)
     {
         // input table
         TableInputMeta inputMeta = new TableInputMeta();
@@ -177,7 +130,7 @@ public class KettleUtil
      * @param dest      目的数据库
      * @param setting   同步参数设置
      */
-    public static void addSynchronizedComponent(TransMeta transMeta , Database source , Database dest , SynchronizationSetting setting)
+    public static void addSynchronizedComponent(TransMeta transMeta , Database source , Database dest , DatabaseImporterSetting setting)
     {
         // 对每个表进行同步组件的设置
         int next = 1;
@@ -199,10 +152,8 @@ public class KettleUtil
      * @param setting   同步参数设置
      * @param index     同步序号
      */
-    
-    // TODO check the modify in syn
     public static void addSynchronizedComponent(TransMeta transMeta , Database source , Table sourceTable ,
-                                                Database dest , Table destTable , SynchronizationSetting setting , int index)
+                                                Database dest , Table destTable , DatabaseImporterSetting setting , int index)
     {
         /**
          * 四个后面需要使用的数组
@@ -260,6 +211,8 @@ public class KettleUtil
         transMeta.addTransHop(new TransHopMeta(inputStepMeta1 , merge));
         transMeta.addTransHop(new TransHopMeta(inputStepMeta2 , merge));
         
+        // TODO 先去掉filter，以后再考虑加入
+        /*
         // 判断filter是否添加成功
         boolean addFilterSuccess = true;
         // filter
@@ -278,7 +231,7 @@ public class KettleUtil
         {
             addFilterSuccess = false;
             System.out.println("add filter component fail, due to the filter value is not legal...");
-        }
+        }*/
         
         // Syn
         SynchronizeAfterMergeMeta synMeta = new SynchronizeAfterMergeMeta();
@@ -305,11 +258,15 @@ public class KettleUtil
         StepMeta syn = new StepMeta(String.format("syn_%s" , sourceTable.getTableName()) , synMeta);
         transMeta.addStep(syn);
         
+        /*
         // 如果filter没有加成功，直接交给syn
         if (!addFilterSuccess)
             transMeta.addTransHop(new TransHopMeta(merge , syn));
         else
-            transMeta.addTransHop(new TransHopMeta(filter , syn));
+            transMeta.addTransHop(new TransHopMeta(filter , syn));*/
+        
+        // 从merge到syn
+        transMeta.addTransHop(new TransHopMeta(merge , syn));
         
         System.out.println("add syn component to table " + sourceTable.getTableName());
     }

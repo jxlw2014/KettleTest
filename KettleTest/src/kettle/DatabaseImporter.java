@@ -1,5 +1,9 @@
 package kettle;
 
+import util.KettleUtil.DatabaseImporterSetting;
+
+import common.Pair;
+
 import database.Database;
 
 /**
@@ -24,6 +28,26 @@ public interface DatabaseImporter
      * 执行一次导入操作，如果是导入就是完整的导入一次，如果是同步就是完整的同步一次。在执行exsecute之前必须进行build，否则结果不可预估
      */
     public boolean execute();
+    
+    /**
+     * 设置导入的参数
+     */
+    public void setSetting(DatabaseImporterSetting setting);
+    
+    /**
+     * 设置进行导入的表的名称，如果设置了excludedTables就不能够进行设置
+     */
+    public void setIncludedTables(Iterable<String> tables);
+    
+    /**
+     * 设置不进行导入的表的名称，如果设置了includedTables就不能够再进行设置
+     */
+    public void setExcludedTables(Iterable<String> tables);
+    
+    /**
+     * 获得导入的数据库连接对
+     */
+    public Pair<Database , Database> getConnPair();
     
     /**
      * 停止导入

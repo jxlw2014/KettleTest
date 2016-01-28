@@ -20,7 +20,7 @@ public class Stopwatch
     /**
      * 开始计时
      */
-    public synchronized void start()
+    public void start()
     {
         this.curTime = System.currentTimeMillis();
     }
@@ -28,7 +28,7 @@ public class Stopwatch
     /**
      * 停止计时，如果之前执行过start，返回过去的时间，否则返回0
      */
-    public synchronized double stop()
+    public double stop()
     {
         // 如果没有执行过start
         if (this.curTime < 0)
