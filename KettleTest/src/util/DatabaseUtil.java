@@ -49,12 +49,19 @@ public final class DatabaseUtil
             // 进行每一列的转换
             for (TableColumn column : table.getColumnList())
             {
-                // 需要判断特殊的columnSize，如果是表示无穷大的-1，在mysql中需要用一个同样支持很长的值的数据结构来对应
+                // 需要判断特殊的columnSize，这样的size只能是源表为sqlserver的情况
                 if (column.columnSize < 0)
                 {
-                    // the size is not used to create a column
-                    ans.addColumn(TableColumn.newColumn(column.columnName , 
-                                                        "MEDIUMTEXT" , 1));
+                    // 如果是表示无穷大的-1，在mysql中需要用一个同样支持很长的值的数据结构来对应
+                    if (dest == DATABASE_TYPE.MYSQL)
+                    {
+                        // the size is not used to create a column
+                        ans.addColumn(TableColumn.newColumn(column.columnName , 
+                                                            "MEDIUMTEXT" , 1));
+                    }
+                    // 在oracle中的对应，用一个varchar2(4000)
+                    else if (dest == DATABASE_TYPE.ORACLE)
+                        ans.addColumn(TableColumn.newColumn(column.columnName , "VARCHAR2" , 4000)); 
                 }
                 else
                 {

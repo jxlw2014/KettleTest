@@ -4,7 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.Future;
 
-import kettle.DatabaseImporterManager.ImportResult.STATE;
+import kettle.ImportResult.STATE;
 
 import common.Pair;
 
@@ -36,6 +36,9 @@ public abstract class AbstractDatabaseImporterManager implements DatabaseImporte
         for (Pair<Database , Database> pair : pairs)
             connList.add(pair);
         buildImporters();
+            
+        // 执行前的初始化
+        initBeforeExecute();
     }
 
     /**
@@ -50,14 +53,14 @@ public abstract class AbstractDatabaseImporterManager implements DatabaseImporte
         for (Pair<Database , Database> pair : pairs)
             connList.add(pair);
         buildImporters();
+            
+        // 执行前的初始化
+        initBeforeExecute();
     } 
     
     @Override
     public boolean execute(boolean isAsync)
     {
-        // 执行前初始化
-        initBeforeExecute();
-        
         // 如果是异步
         if (isAsync)
         {

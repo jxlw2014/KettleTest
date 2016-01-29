@@ -13,8 +13,8 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import kettle.DatabaseImporterManager.ImportResult.STATE;
-import util.KettleUtil.DatabaseImporterSetting;
+import kettle.ImportResult.STATE;
+import util.KettleUtil.TableImportSetting;
 import util.Stopwatch;
 
 import common.Pair;
@@ -23,7 +23,13 @@ import database.Database;
 
 
 /**
- * 处理多个数据库导入的管理类
+ * <p>处理多个数据库导入的管理类，执行顺序如下：<br>
+ * 1. 首先执行set有关的操作进行参数的设置  setSetting , setIncludedTables , setExcludedTables ...<br>
+ * 2. 然后进行build操作 <br>
+ * 3. 最后进行exec操作  <br> <br>
+ * <p>另外如果需要设置导入时的batch参数，需要按照buildByImporters的方式来进行，在每个importer中设置batchSize。
+ * 如果采用连接来进行初始化，则采用Consts中的DEFAULT_BATCH_SIZE。因为如果同时进行很多库的导入，batch过大会消耗
+ * 很多的资源，默认采用最为节省的方式，当然可以根据具体的情况进行参数的调优
  */
 public class ImporterManager extends AbstractDatabaseImporterManager
 {
@@ -60,8 +66,8 @@ public class ImporterManager extends AbstractDatabaseImporterManager
                 {
                     ImportResult result = ImportResult.newResult();
                     result.setTime(watch.stop())
-                          .setSourceDatabasename(this.sourceDatabase)
-                          .setDestDatabasename(this.destDatabase)
+                          .setSourceDatabase(this.sourceDatabase)
+                          .setDestDatabase(this.destDatabase)
                           .setState(STATE.SUCCESS);
                     return result;
                 }
@@ -87,7 +93,7 @@ public class ImporterManager extends AbstractDatabaseImporterManager
     /**
      * 为了支持异步导入
      */
-    private ExecutorService asyncService = null;
+    private ExecutorService asyncService = Executors.newCachedThreadPool();
     /**
      * 为了支持定时执行
      */
@@ -106,7 +112,7 @@ public class ImporterManager extends AbstractDatabaseImporterManager
     /**
      * 数据库导入的设置对象
      */
-    private DatabaseImporterSetting setting;
+    private TableImportSetting setting;
     
     // 进行具体处理的表
     private Set<String> tables;
@@ -122,7 +128,7 @@ public class ImporterManager extends AbstractDatabaseImporterManager
      * 得到新的数据导入的管理对象
      * @param setting 导入参数设置
      */
-    public static ImporterManager newDataImportManager(DatabaseImporterSetting setting)
+    public static ImporterManager newDataImportManager(TableImportSetting setting)
     {
         ImporterManager manager = new ImporterManager(MANAGER_TYPE.IMPORT);
         manager.setting = setting;
@@ -133,7 +139,7 @@ public class ImporterManager extends AbstractDatabaseImporterManager
      * 得到新的数据同步的管理对象
      * @param setting 同步参数设置
      */
-    public static ImporterManager newDataSynManager(DatabaseImporterSetting setting)
+    public static ImporterManager newDataSynManager(TableImportSetting setting)
     {
         ImporterManager manager = new ImporterManager(MANAGER_TYPE.SYN);
         manager.setting = setting;
@@ -185,27 +191,27 @@ public class ImporterManager extends AbstractDatabaseImporterManager
                     {
                         case IMPORT:
                             // 检查类型
-                            if (importer instanceof DataImporter)
+                            if (importer instanceof DatabaseDataImporter)
                                 this.connList.add(conn);
                                 this.importers.add(importer);
                                 
                         case SYN:
                             // 检查类型
-                            if (importer instanceof TimingDataSynchronization)
+                            if (importer instanceof TimingDatabaseDataSynchronization)
                                 this.connList.add(conn);
                                 this.importers.add(importer);
                     }
                 }
             }
         }
+        
+        // 执行前的初始化
+        initBeforeExecute();
     }
 
     @Override
     public List<ImportResult> executeSequential() 
     {
-        // 执行之前的初始化操作
-        initBeforeExecute();
-        
         System.out.println("Start import sequential...");
         
         List<ImportResult> results = new ArrayList<ImportResult>();
@@ -225,8 +231,8 @@ public class ImporterManager extends AbstractDatabaseImporterManager
                 if (importer.execute())
                 {
                     ImportResult result = ImportResult.newResult();
-                    result.setSourceDatabasename(pair.first.toString())
-                          .setDestDatabasename(pair.second.toString())
+                    result.setSourceDatabase(pair.first.toString())
+                          .setDestDatabase(pair.second.toString())
                           .setState(STATE.SUCCESS)
                           .setTime(watch.stop());
                     results.add(result);
@@ -242,13 +248,9 @@ public class ImporterManager extends AbstractDatabaseImporterManager
     @Override
     public List<Future<ImportResult>> executeAsync()
     {
-        // 执行之前的初始化操作
-        initBeforeExecute();
-        
         System.out.println("Start import async...");
         
         List<Future<ImportResult>> results = new ArrayList<Future<ImportResult>>();
-        asyncService = Executors.newCachedThreadPool();
         // 所有的导入类
         int index = 0;
         // 处理所有的导入对象
@@ -266,9 +268,6 @@ public class ImporterManager extends AbstractDatabaseImporterManager
     @Override
     public void timingExecute(long time, TimeUnit unit) 
     {
-        // 执行之前的初始化操作
-        initBeforeExecute();
-        
         // 如果是第一次执行
         if (!timingIsStart.get())
         {   
@@ -354,12 +353,12 @@ public class ImporterManager extends AbstractDatabaseImporterManager
         switch (this.type)
         {
             case IMPORT:
-                DataImporter importer = DataImporter.newImporter();
+                DatabaseDataImporter importer = DatabaseDataImporter.newImporter();
                 importer.setSetting(setting);
                 return importer;
                 
             case SYN:
-                TimingDataSynchronization syn = TimingDataSynchronization.newInstance();
+                TimingDatabaseDataSynchronization syn = TimingDatabaseDataSynchronization.newInstance();
                 syn.setSetting(setting);
                 return syn;
                 

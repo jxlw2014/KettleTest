@@ -21,9 +21,9 @@ import database.Table.TableColumn;
 public final class KettleUtil 
 {
     /**
-     * 库对库导入工具的参数设定，用来设置一个库中所有表import时的参数
+     * 表对表导入工具的参数设定，用来设置一个库中所有表import时的参数
      */
-    public static class DatabaseImporterSetting
+    public static class TableImportSetting
     {
         // 是否工作在batch提交下
         private boolean inBatch = true;
@@ -33,22 +33,22 @@ public final class KettleUtil
         /**
          * 默认的同步参数设置
          */
-        public static final DatabaseImporterSetting DEFAULT = new DatabaseImporterSetting().setInBatch(true).setCommitSize(1000);
+        public static final TableImportSetting DEFAULT = new TableImportSetting().setInBatch(true).setCommitSize(1000);
         
-        private DatabaseImporterSetting() { }
+        private TableImportSetting() { }
         
         /**
          * 获得一个新的setting对象
          */
-        public static DatabaseImporterSetting newSetting()
+        public static TableImportSetting newSetting()
         {
-            return new DatabaseImporterSetting();
+            return new TableImportSetting();
         }
         
         /**
          * 设置是否采用batch的方式插入
          */
-        public DatabaseImporterSetting setInBatch(boolean inBatch)
+        public TableImportSetting setInBatch(boolean inBatch)
         {
             this.inBatch = inBatch;
             return this;
@@ -57,7 +57,7 @@ public final class KettleUtil
         /**
          * 设置提交的记录数目
          */
-        public DatabaseImporterSetting setCommitSize(int commitSize)
+        public TableImportSetting setCommitSize(int commitSize)
         {
             this.commitSize = commitSize;
             return this;
@@ -72,7 +72,7 @@ public final class KettleUtil
      * @param source    源数据库
      * @param dest      目标数据库
      */
-    public static void addImportComponent(TransMeta transMeta , Database source , Database dest , DatabaseImporterSetting setting)
+    public static void addImportComponent(TransMeta transMeta , Database source , Database dest , TableImportSetting setting)
     {
         // 操作的标号
         int next = 1;
@@ -95,7 +95,7 @@ public final class KettleUtil
      * @param index 操作的序号，用来区分不同的导入组件
      */
     public static void addImportComponent(TransMeta transMeta , Database sourceDatabase , Table sourceTable , 
-                                                                     Database destDatabase , Table destTable , DatabaseImporterSetting setting , int index)
+                                                                     Database destDatabase , Table destTable , TableImportSetting setting , int index)
     {
         // input table
         TableInputMeta inputMeta = new TableInputMeta();
@@ -130,7 +130,7 @@ public final class KettleUtil
      * @param dest      目的数据库
      * @param setting   同步参数设置
      */
-    public static void addSynchronizedComponent(TransMeta transMeta , Database source , Database dest , DatabaseImporterSetting setting)
+    public static void addSynchronizedComponent(TransMeta transMeta , Database source , Database dest , TableImportSetting setting)
     {
         // 对每个表进行同步组件的设置
         int next = 1;
@@ -153,7 +153,7 @@ public final class KettleUtil
      * @param index     同步序号
      */
     public static void addSynchronizedComponent(TransMeta transMeta , Database source , Table sourceTable ,
-                                                Database dest , Table destTable , DatabaseImporterSetting setting , int index)
+                                                Database dest , Table destTable , TableImportSetting setting , int index)
     {
         /**
          * 四个后面需要使用的数组

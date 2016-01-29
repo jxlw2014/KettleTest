@@ -3,6 +3,9 @@ package kettle;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -11,7 +14,7 @@ import org.pentaho.di.trans.TransMeta;
 
 import util.DatabaseUtil;
 import util.KettleUtil;
-import util.KettleUtil.DatabaseImporterSetting;
+import util.KettleUtil.TableImportSetting;
 
 import common.Pair;
 
@@ -23,7 +26,7 @@ import env.Constants;
  * 数据导入类，实现将一个数据库中的所有表数据导入到另一个数据库中的功能。采用的导入策略是：首先复制表的结构，如果目的数据库中
  * 有同名表，就进行重建。然后进行数据的导入
  */
-public class DataImporter implements DatabaseImporter 
+public class DatabaseDataImporter implements DatabaseImporter , TimingImporter 
 {
     /**
      * 工作状态
@@ -44,7 +47,7 @@ public class DataImporter implements DatabaseImporter
     private STATE state = STATE.NEW;
     
     // 导入设置
-    private DatabaseImporterSetting setting = DatabaseImporterSetting.DEFAULT;
+    private TableImportSetting setting = TableImportSetting.DEFAULT;
     
     // 判断是否shutdown
     private AtomicBoolean isShutdown = new AtomicBoolean(false);
@@ -53,18 +56,22 @@ public class DataImporter implements DatabaseImporter
     private AtomicInteger setFlag = new AtomicInteger(0);
     private Set<String> tables;
     
-    private DataImporter() { }
+    // 支持定时执行操作
+    private AtomicBoolean timingIsSet = new AtomicBoolean(false);
+    private ScheduledExecutorService schedule = null;
+    
+    private DatabaseDataImporter() { }
     
     /**
      * 新建一个数据导入对象
      */
-    public static DataImporter newImporter()
+    public static DatabaseDataImporter newImporter()
     {
-        return new DataImporter();
+        return new DatabaseDataImporter();
     }
     
     @Override
-    public void setSetting(DatabaseImporterSetting setting)
+    public void setSetting(TableImportSetting setting)
     {
         this.setting = setting;
     }
@@ -207,6 +214,28 @@ public class DataImporter implements DatabaseImporter
             return false;
         }
     }
+    
+    /**
+     * execute之前需要执行build，否则结果不可预估。另外这里定时执行execute其实也是一种同步的方式，因为每次都会删除重建
+     */
+    @Override
+    public void timingExecute(long time , TimeUnit timeUnit)
+    {
+        // 如果没有设置定时导入
+        if (!timingIsSet.get())
+        {
+            timingIsSet.set(true);
+            schedule = Executors.newSingleThreadScheduledExecutor();
+            schedule.scheduleAtFixedRate(new Runnable()
+            {
+                @Override
+                public void run() 
+                {
+                    execute();
+                }
+            } , 0 , time , timeUnit);
+        }
+    }   
 
     @Override
     public void setBatchSize(int batchSize) 
@@ -218,6 +247,13 @@ public class DataImporter implements DatabaseImporter
     public void shutdown()
     {
         this.isShutdown.set(true);
+        this.timingIsSet.set(false);
+        // 如果不为null
+        if (this.schedule != null)
+        {
+            this.schedule.shutdown();
+            this.schedule = null;
+        }
     }
     
     /**

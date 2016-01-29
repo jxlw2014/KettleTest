@@ -1,6 +1,6 @@
 package kettle;
 
-import util.KettleUtil.DatabaseImporterSetting;
+import util.KettleUtil.TableImportSetting;
 
 import common.Pair;
 
@@ -9,6 +9,7 @@ import database.Database;
 /**
  * 从一个数据库向另一个数据库进行完全导入的导入接口
  */
+// TODO 有没有必要提供异步执行接口?
 public interface DatabaseImporter 
 {
     /**
@@ -32,7 +33,7 @@ public interface DatabaseImporter
     /**
      * 设置导入的参数
      */
-    public void setSetting(DatabaseImporterSetting setting);
+    public void setSetting(TableImportSetting setting);
     
     /**
      * 设置进行导入的表的名称，如果设置了excludedTables就不能够进行设置

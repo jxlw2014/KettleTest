@@ -12,126 +12,7 @@ import database.Database;
  * 完全导入工具管理类的接口
  */
 public interface DatabaseImporterManager 
-{
-    /**
-     * 一次导入的结果
-     */
-    public static class ImportResult
-    {
-        /**
-         * 导入的状态
-         */
-        public enum STATE
-        {
-            SUCCESS , 
-            FAIL;
-        }
-        
-        /**
-         * 失败结果使用的统一对象
-         */
-        public static final ImportResult FAIL = new ImportResult().setState(STATE.FAIL);
-        
-        // 导入状态
-        private STATE state;
-        // 导入时间
-        private double time;
-        // 导入的源数据库信息
-        private String sourceDatabase;
-        // 导入的目的数据库信息
-        private String destDatabase;
-        
-        private ImportResult() { }
-        
-        /**
-         * 获得一个新的导入结果
-         */
-        static ImportResult newResult()
-        {
-            return new ImportResult();
-        }
-
-        ImportResult setState(STATE state)
-        {
-            this.state = state;
-            return this;
-        }
-
-        ImportResult setTime(double time) 
-        {
-            this.time = time;
-            return this;
-        }
-
-        ImportResult setSourceDatabasename(String sourceDatabase) 
-        {
-            this.sourceDatabase = sourceDatabase;
-            return this;
-        }
-
-        ImportResult setDestDatabasename(String destDatabase) 
-        {
-            this.destDatabase = destDatabase;
-            return this;
-        }
-        
-        /**
-         * 获得导入的状态
-         */
-        public STATE state()
-        {
-            return this.state;
-        }
-        
-        /**
-         * 获得导入需要的时间
-         */
-        public double time()
-        {
-            return this.time;
-        }
-        
-        /**
-         * 获得源数据库信息
-         */
-        public String sourceDatabase()
-        {
-            return this.sourceDatabase;
-        }
-        
-        /**
-         * 获得目的数据库名
-         */
-        public String destDatabase()
-        {
-            return this.destDatabase;
-        }
-        
-        @Override
-        public String toString()
-        {
-            // state , time , sourceDatabase , destDatabase
-            StringBuilder builder = new StringBuilder();
-            builder.append("{");
-            builder.append(String.format("state:%s" , this.state.toString()));
-            // 如果失败了
-            if (this.state == STATE.FAIL)
-                builder.append("}");
-            // 如果成功了，后面的东西都要
-            else
-            {
-                builder.append(", ");
-                builder.append(String.format("time:%f" , this.time));
-                builder.append(", ");
-                builder.append(String.format("source_db:%s" , this.sourceDatabase));
-                builder.append(", ");
-                builder.append(String.format("dest_db:%s" , this.destDatabase));
-                builder.append("}");
-            }
-            return builder.toString();
-        }
-    }
-    
+{   
     /**
      * 用给出的多个数据库连接对来初始化
      */
@@ -171,13 +52,13 @@ public interface DatabaseImporterManager
     
     /**
      * 进行导入的表的名称，如果设置了这个excludedTables就不能够进行设置，只能设置一次。这里的名称指的是所有源表中的名称，注意不同的数据库源中有相同的表名的情况，这样可能会造成两个表同时不被导入。
-     * importer自身可能已经设置了表，这个设置对于该importer就变得无效了
+     * importer自身可能已经设置了表，这个设置对于该importer就变得无效了。执行需要在build之前，否则无效
      */
     public void setIncludedTables(Iterable<String> tables);
     
     /**
      * 不进行导入的表的名称，如果设置了这个includedTables就不能够进行设置，只能设置一次。这里的名称指的是所有源表中的名称，注意不同的数据库源中有相同的表名的情况，这样可能会造成两个表同时不被导入。
-     * importer自身可能已经设置了表，这个设置对于该importer就变得无效了
+     * importer自身可能已经设置了表，这个设置对于该importer就变得无效了。执行需要在build之前，否则无效
      */
     public void setExcluedTables(Iterable<String> tables);
     

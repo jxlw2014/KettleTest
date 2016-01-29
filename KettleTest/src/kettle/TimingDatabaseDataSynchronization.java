@@ -14,7 +14,7 @@ import org.pentaho.di.trans.TransMeta;
 
 import util.DatabaseUtil;
 import util.KettleUtil;
-import util.KettleUtil.DatabaseImporterSetting;
+import util.KettleUtil.TableImportSetting;
 
 import common.Pair;
 
@@ -25,16 +25,16 @@ import env.Constants;
 /**
  * 定时数据同步，从一个数据库定时同步另一个数据库。假定两个数据库之间已经执行过import的操作，两个数据库有一致的表结构
  */
-public class TimingDataSynchronization implements DatabaseImporter , TimingImporter
+public class TimingDatabaseDataSynchronization implements DatabaseImporter , TimingImporter
 {
-    private TimingDataSynchronization() { }
+    private TimingDatabaseDataSynchronization() { }
     
     /**
      * 获得新的同步实例
      */
-    public static TimingDataSynchronization newInstance()
+    public static TimingDatabaseDataSynchronization newInstance()
     {
-        return new TimingDataSynchronization();
+        return new TimingDatabaseDataSynchronization();
     }
     
     // syn工作的batch大小
@@ -45,10 +45,11 @@ public class TimingDataSynchronization implements DatabaseImporter , TimingImpor
     private Database dest;
     
     // 同步参数的设置
-    private DatabaseImporterSetting setting = DatabaseImporterSetting.DEFAULT;
+    private TableImportSetting setting = TableImportSetting.DEFAULT;
     
     // 支持定时操作的线程池
-    private ScheduledExecutorService executor; 
+    private ScheduledExecutorService schedule = null;
+    private AtomicBoolean timingIsSet = new AtomicBoolean(false);
     
     // 是否停止的标志
     private AtomicBoolean isShutdown = new AtomicBoolean(false);
@@ -58,7 +59,7 @@ public class TimingDataSynchronization implements DatabaseImporter , TimingImpor
     private Set<String> tables;
     
     @Override
-    public void setSetting(DatabaseImporterSetting setting)
+    public void setSetting(TableImportSetting setting)
     {
         this.setting = setting;
     }
@@ -114,16 +115,21 @@ public class TimingDataSynchronization implements DatabaseImporter , TimingImpor
     @Override
     public void timingExecute(long time , TimeUnit timeUnit)
     {
-        // 一个线程就够了，只要管理定时操作就可以了
-        executor = Executors.newScheduledThreadPool(1);
-        // 定时执行同步操作
-        executor.scheduleAtFixedRate(new Runnable()
+        // 如果没有设置timing
+        if (!this.timingIsSet.get())
         {
-            public void run()
+            this.timingIsSet.set(true);
+            // 一个线程就够了，只要管理定时操作就可以了
+            schedule = Executors.newSingleThreadScheduledExecutor();
+            // 定时执行同步操作
+            schedule.scheduleAtFixedRate(new Runnable()
             {
-                execute();
-            }
-        } , 0 , time , timeUnit);
+                public void run()
+                {
+                    execute();
+                }
+            } , 0 , time , timeUnit);
+        }
     }
     
     @Override
@@ -199,9 +205,10 @@ public class TimingDataSynchronization implements DatabaseImporter , TimingImpor
      */
     public void shutdown()
     {
-        if (executor != null)
-            executor.shutdown();
         isShutdown.set(true);
+        this.timingIsSet.set(false);
+        if (this.schedule != null)
+            this.schedule.shutdown();
     }
     
     /**

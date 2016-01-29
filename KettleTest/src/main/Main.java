@@ -1,11 +1,12 @@
 package main;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.Future;
 
-import kettle.DatabaseImporterManager.ImportResult;
+import kettle.ImportResult;
 import kettle.ImporterManager;
-import util.KettleUtil.DatabaseImporterSetting;
+import util.KettleUtil.TableImportSetting;
 import util.Pairs;
 import database.Database;
 import database.MysqlDatabase;
@@ -56,18 +57,21 @@ public class Main
                                     .setPort(Constants.DEFAULT_MYSQL_PORT).build();
         
         // 测试多个同步操作同时进行
-        ImporterManager manager = ImporterManager.newDataImportManager(DatabaseImporterSetting.DEFAULT);
+        ImporterManager manager = ImporterManager.newDataImportManager(TableImportSetting.DEFAULT);
 
         manager.buildByConnPairs(Pairs.toPairs(sourceDatabase1 , destDatabase1 , sourceDatabase2 , destDatabase2));
         
-        List<Future<ImportResult>> results = manager.executeAsync();
-        for (Future<ImportResult> result : results)
+        List<Future<ImportResult>> futures = manager.executeAsync();
+        List<ImportResult> results = new ArrayList<ImportResult>();
+        for (Future<ImportResult> future : futures)
         {
             try
             {
-                System.out.println(result.get());
+                results.add(future.get());
             } catch (Exception e) { }
         }
+        for (ImportResult result : results)
+            System.out.println(result);
         
         // 结果都有了，肯定可以结束了
         manager.shutdown();
